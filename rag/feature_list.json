@@ -1,0 +1,83 @@
+{
+  "module": "rag",
+  "features": [
+    {
+      "id": "RAG-001",
+      "title": "语料采集与标准化",
+      "description": "收集并标准化六类知识来源。",
+      "dependencies": [],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "覆盖六类来源",
+        "metadata 字段集齐全",
+        "去噪与去重完成"
+      ]
+    },
+    {
+      "id": "RAG-002",
+      "title": "分块、元数据建模与索引入库",
+      "description": "执行分块、embedding、Milvus 入库和 BM25 构建。",
+      "dependencies": ["RAG-001"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "Milvus collection 创建成功",
+        "BM25 索引构建成功",
+        "index_documents 返回正确索引数"
+      ]
+    },
+    {
+      "id": "RAG-003",
+      "title": "Dense Retrieval 实现",
+      "description": "实现向量检索。",
+      "dependencies": ["RAG-002"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "基础查询返回相关结果",
+        "raw dense retrieval 延迟 < 1.5s"
+      ]
+    },
+    {
+      "id": "RAG-004",
+      "title": "BM25 检索与混合融合",
+      "description": "实现 BM25 与 RRF 融合。",
+      "dependencies": ["RAG-003"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "BM25 可独立运行",
+        "Recall@5 >= 0.75",
+        "source_filter 生效"
+      ]
+    },
+    {
+      "id": "RAG-005",
+      "title": "Rerank 与 Chatbot 接口封装",
+      "description": "加入 reranker 并稳定暴露接口。",
+      "dependencies": ["RAG-004"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "retrieve 签名一致",
+        "get_context_for_llm 签名一致",
+        "get_context_for_llm 延迟 < 3s"
+      ]
+    },
+    {
+      "id": "RAG-006",
+      "title": "定时刷新与评估优化",
+      "description": "定时刷新新闻与社媒并输出评估指标。",
+      "dependencies": ["RAG-005"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "refresh job 可运行",
+        "输出 Recall@K、延迟、Faithfulness",
+        "Generation Faithfulness >= 85%"
+      ]
+    }
+  ]
+}
+

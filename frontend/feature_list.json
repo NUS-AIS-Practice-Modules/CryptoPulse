@@ -1,0 +1,85 @@
+{
+  "module": "frontend",
+  "features": [
+    {
+      "id": "FE-001",
+      "title": "项目初始化",
+      "description": "初始化 React + TypeScript + Tailwind + Vite 项目。",
+      "dependencies": [],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "npm install",
+        "npm run dev",
+        "npm run build",
+        "Tailwind CSS 生效"
+      ]
+    },
+    {
+      "id": "FE-002",
+      "title": "聊天页面 UI",
+      "description": "实现聊天主页面与基础布局。",
+      "dependencies": ["FE-001"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "输入框可输入内容",
+        "点击发送按钮可提交",
+        "消息列表支持滚动"
+      ]
+    },
+    {
+      "id": "FE-003",
+      "title": "接入聊天 API",
+      "description": "接入 POST /api/chat。",
+      "dependencies": ["FE-002"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "点击发送调用 API",
+        "返回 reply 正常显示",
+        "API 失败时有错误提示"
+      ]
+    },
+    {
+      "id": "FE-004",
+      "title": "文件上传组件",
+      "description": "实现文件上传组件 UI。",
+      "dependencies": ["FE-002"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "可选择文件",
+        "显示文件名",
+        "支持 PDF/TXT 文件"
+      ]
+    },
+    {
+      "id": "FE-005",
+      "title": "Dashboard 页面",
+      "description": "实现趋势与情绪分布可视化页面。",
+      "dependencies": ["FE-003"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "页面可访问",
+        "图表展示趋势数据",
+        "数据来自 API"
+      ]
+    },
+    {
+      "id": "FE-006",
+      "title": "状态检测与错误处理",
+      "description": "处理系统状态与异常提示。",
+      "dependencies": ["FE-003"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "GET /api/health 可调用",
+        "网络错误有提示信息",
+        "Loading 状态正常"
+      ]
+    }
+  ]
+}
+

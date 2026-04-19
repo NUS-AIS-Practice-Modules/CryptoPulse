@@ -1,0 +1,115 @@
+{
+  "project": "CryptoPulse",
+  "team": [
+    { "name": "Frontend Owner", "module": "frontend" },
+    { "name": "LoRA Owner", "module": "lora" },
+    { "name": "RAG Owner", "module": "rag" },
+    { "name": "Chatbot Owner", "module": "chatbot" }
+  ],
+  "milestones": [
+    {
+      "id": "milestone-001",
+      "title": "Repository initialized with Codex harness",
+      "description": "Root harness files, shared docs, and all module documentation skeletons exist in the repository.",
+      "owner": "integrator",
+      "status": "passing",
+      "target_date": "2026-04-19",
+      "evidence": "Root AGENTS.md, ARCHITECTURE.md, docs/*.md, shared/types.py, module docs, and init.sh added.",
+      "gate": [
+        "Root AGENTS.md exists",
+        "All four modules contain AGENTS.md, ARCHITECTURE.md, FEATURES.md, SETUP.md, and feature_list.json",
+        "docs/INTERFACES.md defines all cross-module contracts",
+        "init.sh exists and passes bash syntax check"
+      ]
+    },
+    {
+      "id": "milestone-002",
+      "title": "Modules runnable in isolation with mock-friendly setup",
+      "description": "Each module can bootstrap its own environment and document a mock strategy before integration.",
+      "owner": "each module owner",
+      "status": "not_started",
+      "target_date": "2026-04-24",
+      "evidence": "",
+      "gate": [
+        "Frontend local startup command documented and runnable",
+        "Chatbot supports USE_MOCK=true",
+        "LoRA setup and storage locations are documented",
+        "RAG setup and Milvus local bootstrap are documented"
+      ]
+    },
+    {
+      "id": "milestone-003",
+      "title": "Interfaces finalized and shared types aligned",
+      "description": "Provider and consumer teams agree on all payloads, return shapes, and shared enums.",
+      "owner": "integrator",
+      "status": "in_progress",
+      "target_date": "2026-04-24",
+      "evidence": "Initial contracts and shared types committed during repository initialization.",
+      "gate": [
+        "No unresolved type conflicts between docs/INTERFACES.md and shared/types.py",
+        "DocumentSource includes all RAG source categories",
+        "Mock behavior is documented for every consumed interface"
+      ]
+    },
+    {
+      "id": "milestone-004",
+      "title": "LoRA and RAG integration-ready",
+      "description": "Both provider modules expose real interfaces usable by Chatbot without mock mode.",
+      "owner": "LoRA Owner + RAG Owner",
+      "status": "not_started",
+      "target_date": "2026-04-30",
+      "evidence": "",
+      "gate": [
+        "LoRA interface functions callable with documented inputs",
+        "RAG interface functions callable with documented inputs",
+        "Provider verification evidence recorded in module trackers"
+      ]
+    },
+    {
+      "id": "milestone-005",
+      "title": "Chatbot integrated with real providers",
+      "description": "Chatbot disables mocks and completes end-to-end pipeline execution using real LoRA and RAG interfaces.",
+      "owner": "Chatbot Owner",
+      "status": "not_started",
+      "target_date": "2026-05-04",
+      "evidence": "",
+      "gate": [
+        "USE_MOCK=false path verified",
+        "/api/chat returns reply, sentiment, entities, and sources",
+        "/api/health reports lora and rag as ok"
+      ]
+    },
+    {
+      "id": "milestone-006",
+      "title": "Frontend end-to-end integration",
+      "description": "Frontend runs against the real Chatbot API and covers the main chat flow and dashboard summary flow.",
+      "owner": "Frontend Owner",
+      "status": "not_started",
+      "target_date": "2026-05-07",
+      "evidence": "",
+      "gate": [
+        "Frontend chat UI sends requests to the real API",
+        "Sentiment summary page consumes backend data",
+        "User-visible failure states are handled"
+      ]
+    },
+    {
+      "id": "milestone-007",
+      "title": "Demo-ready full-system flow",
+      "description": "Full system works without mocks and is ready for evaluation and presentation.",
+      "owner": "integrator",
+      "status": "not_started",
+      "target_date": "2026-05-10",
+      "evidence": "",
+      "gate": [
+        "Full chat flow works without mocks",
+        "Retrieval and sentiment outputs are visible in the system",
+        "Known risks are documented in progress.md or session-handoff.md"
+      ]
+    }
+  ],
+  "current_milestone": "milestone-003",
+  "last_updated": "2026-04-19",
+  "updated_by": "Codex integrator"
+}
+

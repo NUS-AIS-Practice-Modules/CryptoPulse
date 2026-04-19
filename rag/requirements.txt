@@ -1,0 +1,7 @@
+pymilvus
+sentence-transformers
+transformers
+rank-bm25
+python-dotenv
+httpx
+

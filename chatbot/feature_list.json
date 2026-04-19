@@ -1,0 +1,72 @@
+{
+  "module": "chatbot",
+  "features": [
+    {
+      "id": "CB-001",
+      "title": "API Service Skeleton",
+      "description": "Initialize FastAPI, routes, and health check.",
+      "dependencies": [],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "pip install -r requirements.txt",
+        "uvicorn src.app:app --reload",
+        "GET /api/health returns HTTP 200"
+      ]
+    },
+    {
+      "id": "CB-001b",
+      "title": "LLM-based NER Implementation",
+      "description": "Implement the current NER backend and routing layer.",
+      "dependencies": ["CB-001"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "Entity extraction returns expected crypto entities",
+        "Output matches shared Entity shape",
+        "NER_BACKEND=llm routes correctly"
+      ]
+    },
+    {
+      "id": "CB-004",
+      "title": "Conversation Generation Pipeline",
+      "description": "Implement the chat pipeline with mocks first.",
+      "dependencies": ["CB-001", "CB-001b"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "POST /api/chat returns HTTP 200 in mock mode",
+        "Conversation history works across turns",
+        "Mock-mode latency < 3 seconds"
+      ]
+    },
+    {
+      "id": "CB-005",
+      "title": "Sentiment Trend Summary",
+      "description": "Implement GET /api/sentiment/summary.",
+      "dependencies": ["CB-001"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "Supported periods return HTTP 200",
+        "Unsupported periods return HTTP 422",
+        "Mock data latency < 1 second"
+      ]
+    },
+    {
+      "id": "CB-006",
+      "title": "Integration with Real LoRA and RAG",
+      "description": "Switch Chatbot to real provider calls.",
+      "dependencies": ["CB-004", "CB-005"],
+      "status": "not_started",
+      "evidence": "",
+      "verification": [
+        "USE_MOCK=false path starts",
+        "predict_sentiment succeeds",
+        "get_context_for_llm returns non-empty context",
+        "pytest tests/ passes"
+      ]
+    }
+  ]
+}
+
