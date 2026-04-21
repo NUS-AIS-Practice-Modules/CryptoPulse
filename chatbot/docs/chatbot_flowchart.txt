@@ -1,0 +1,62 @@
+```mermaid
+flowchart TD
+
+    subgraph FE[前端团队]
+        U([用户])
+    end
+
+    subgraph SENT[Sentiment Team]
+        J[sentiment_summary.json<br/>离线预计算情感数据<br/>BTC: Bullish 60/25/15<br/>ETH: Neutral 38/35/27]
+    end
+
+    subgraph RAG[RAG Team]
+        K[get_context_for_llm<br/>query: str<br/>max_tokens: int<br/>top_k: int<br/>returns: str]
+    end
+
+    subgraph LLM_BACKEND[大模型后端 - 二选一]
+        subgraph OAI[OpenAI API]
+            L1[gpt-4o-mini<br/>NER + 对话生成]
+        end
+        subgraph LORA[LoRA Team]
+            L2[LoRA 微调模型<br/>generate_response<br/>inference.py]
+        end
+    end
+
+    subgraph CB[Chatbot 模块 - 集成层]
+        A[POST /api/chat<br/>接收用户消息]
+        B[NER 实体提取<br/>ner_service.py<br/>识别加密货币 → ticker]
+        C[情感缓存查询<br/>O1 内存查询<br/>sentiment_cache.py]
+        D[构建 RAG 查询<br/>原始消息 + 实体 ticker]
+        E[RAG 知识检索<br/>Mock 或真实调用]
+        F[组装 LLM Prompt<br/>系统角色 + RAG上下文<br/>情感数据 + 对话历史]
+        G[LLM 生成回复<br/>LLM_BACKEND=openai 或 lora]
+        H[保存对话历史<br/>conversation_store.py<br/>最多保留 5 轮]
+        I[返回响应]
+    end
+
+    U -->|"POST /api/chat<br/>message: str<br/>conversation_id: str<br/>options: include_sentiment, include_sources"| A
+
+    A --> B
+    B <-->|"NER prompt JSON mode<br/>返回: normalized ticker + original_mention"| L1
+    B --> C
+    C -->|"启动时一次性加载"| J
+    C --> D
+    D --> E
+    E <-->|"query: str<br/>返回: context str"| K
+    E --> F
+    F --> G
+
+    G <-->|"LLM_BACKEND=openai<br/>messages list OpenAI format<br/>返回: reply str"| L1
+    G <-->|"LLM_BACKEND=lora<br/>调用 generate_response<br/>返回: reply str"| L2
+
+    G --> H
+    H --> I
+
+    I -->|"200 OK<br/>reply: str<br/>sentiment: label + confidence + breakdown<br/>entities: text + type + confidence<br/>sources: title + relevance + snippet<br/>conversation_id: str<br/>timestamp: ISO8601"| U
+
+    classDef external fill:#e3f2fd,stroke:#1565c0,color:#000
+    classDef core fill:#e8f5e9,stroke:#2e7d32,color:#000
+
+    class FE,SENT,RAG,OAI,LORA external
+    class CB core
+```
