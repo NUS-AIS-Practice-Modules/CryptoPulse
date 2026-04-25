@@ -6,8 +6,8 @@
       "title": "语料采集与标准化",
       "description": "收集并标准化六类知识来源。",
       "dependencies": [],
-      "status": "not_started",
-      "evidence": "",
+      "status": "in_progress",
+      "evidence": "2026-04-25: Implemented the reusable normalization layer, DOCX link extraction, browser PDF download, real-report PDF detection, and PDF import CLI for RAG-001. The browser flow accepts cookie prompts, prefers USA/United States for region prompts, then tries Spain/Spanish if needed. Reprocessed 18 web links from web-links.docx: 4 CoinShares links saved as direct report PDFs and 14 links fell back to cleaned browser-printed PDFs where no real report PDF was exposed. Imported 19 local PDFs plus 18 web PDFs into data/processed/normalized_documents.jsonl (37 docs). Verified with `cd rag && python -m unittest discover -s tests` (6 tests), `python -m compileall src tests`, JSON tracker validation, and corpus audit: case_study=6, market_data=6, news=18, regulatory=5, whitepaper=2, metadata complete, no short extracted content. Remaining gap: no social_media corpus source provided yet.",
       "verification": [
         "覆盖六类来源",
         "metadata 字段集齐全",
@@ -80,4 +80,3 @@
     }
   ]
 }
-
