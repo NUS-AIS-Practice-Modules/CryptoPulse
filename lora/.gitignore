@@ -1,0 +1,14 @@
+# 忽略数据集和模型权重
+data/
+checkpoints/
+models/
+
+# 忽略日志和评估结果
+logs/
+evaluation_results/
+
+# 忽略 Python 缓存和虚拟环境
+__pycache__/
+*.pyc
+.env
+.venv/
