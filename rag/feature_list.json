@@ -6,8 +6,8 @@
       "title": "语料采集与标准化",
       "description": "收集并标准化六类知识来源。",
       "dependencies": [],
-      "status": "not_started",
-      "evidence": "",
+      "status": "in_progress",
+      "evidence": "2026-04-25: Implemented the reusable normalization layer, DOCX link extraction, browser PDF download, real-report PDF detection, and PDF import CLI for RAG-001. The browser flow accepts cookie prompts, prefers USA/United States for region prompts, then tries Spain/Spanish if needed. Reprocessed 18 web links from web-links.docx: 4 CoinShares links saved as direct report PDFs and 14 links fell back to cleaned browser-printed PDFs where no real report PDF was exposed. 2026-04-26: Re-imported after user supplied corrected CoinShares PDFs for seven problematic links; audited those files for update profile/welcome/personal data/investor profile/cookiebot pollution with no flags. Reclassified new raw PDFs under rag/data/raw and added OCR fallback for scanned PDFs; Binance Information now extracts 70,838 characters. Imported 26 root raw PDFs plus 18 web PDFs into data/processed/normalized_documents.jsonl (44 docs). Verified with `cd rag && python -m unittest discover -s tests` (6 tests), `python -m compileall src tests`, JSON tracker validation, init.sh, and corpus audit: case_study=7, market_data=8, news=18, regulatory=6, whitepaper=5, metadata complete, no short extracted content. Remaining gap: no social_media corpus source provided yet; user instructed to temporarily skip social_media and continue to RAG-002.",
       "verification": [
         "覆盖六类来源",
         "metadata 字段集齐全",
@@ -18,9 +18,11 @@
       "id": "RAG-002",
       "title": "分块、元数据建模与索引入库",
       "description": "执行分块、embedding、Milvus 入库和 BM25 构建。",
-      "dependencies": ["RAG-001"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "RAG-001"
+      ],
+      "status": "passing",
+      "evidence": "2026-04-26: Implemented RAG-002 indexing layer with stable document chunking, metadata propagation, deterministic mock embeddings for plumbing tests, lazy `BAAI/bge-m3` SentenceTransformer provider, Milvus collection/upsert adapter with flush, BM25 JSON index persistence, and `python -m src.indexing.build_index` CLI. Created module-local `rag/.venv` and installed compatible RAG dependencies there, without installing into conda base. Verified local BGE cache at `/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181`: offline `SentenceTransformer` load succeeded with dimension 1024 and produced a `(1, 1024)` embedding. Full mock-embedding indexing against user-running Docker Compose Milvus succeeded: 44 normalized docs -> `indexed_chunks=1961`, collection `cryptopulse_rag_chunks_mock64_flush`, Milvus stats `row_count=1961`, BM25 total documents `1961`, BM25 terms `19901`. Real BGE sample indexing also succeeded: 2 normalized docs -> `indexed_chunks=83`, collection `cryptopulse_rag_chunks_bge_m3_sample`, Milvus stats `row_count=83`. Full real BGE indexing later completed: 44 normalized docs -> `indexed_chunks=1961`, collection `cryptopulse_rag_chunks_bge_m3_full`, Milvus stats `row_count=1961`.",
       "verification": [
         "Milvus collection 创建成功",
         "BM25 索引构建成功",
@@ -31,9 +33,11 @@
       "id": "RAG-003",
       "title": "Dense Retrieval 实现",
       "description": "实现向量检索。",
-      "dependencies": ["RAG-002"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "RAG-002"
+      ],
+      "status": "passing",
+      "evidence": "2026-04-26: Implemented `src.retrieval.retrieve()` and `get_context_for_llm()` with dense Milvus search, source_filter validation, metadata mapping, cached embedding provider, and mockable test seams. Verified with `cd rag && .venv/bin/python -m unittest discover -s tests` (13 tests). Full real BGE indexing completed: 44 docs -> 1961 chunks in collection `cryptopulse_rag_chunks_bge_m3_full`, Milvus `row_count=1961`. Dense retrieval on the full collection returned relevant results and met the latency target: `What does Aave V3 improve?` -> Aave whitepaper chunks in 544.24ms; `What caused the FTX collapse?` with case_study filter -> case study chunks in 75.10ms; `What does MiCA regulate in crypto assets?` with regulatory filter -> regulation chunks in 383.41ms.",
       "verification": [
         "基础查询返回相关结果",
         "raw dense retrieval 延迟 < 1.5s"
@@ -43,9 +47,11 @@
       "id": "RAG-004",
       "title": "BM25 检索与混合融合",
       "description": "实现 BM25 与 RRF 融合。",
-      "dependencies": ["RAG-003"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "RAG-003"
+      ],
+      "status": "passing",
+      "evidence": "2026-04-26: Implemented `BM25Retriever`, `HybridRetriever`, `retrieve_bm25()`, `retrieve_dense()`, and `retrieve_hybrid()`; public `retrieve()` now uses the hybrid RRF pipeline while `retrieve_dense()` preserves raw dense retrieval. Verified with `cd rag && .venv/bin/python -m unittest discover -s tests` (15 tests). BM25 standalone search returned relevant filtered results for regulatory, whitepaper, and market_data queries with latencies 11.01ms, 2.81ms, and 2.04ms. Hybrid RRF against full BGE collection `cryptopulse_rag_chunks_bge_m3_full` plus BM25 produced Recall@5=1.0 on 4 benchmark queries (Aave, MiCA, Binance, CoinShares) with latencies 784.86ms, 142.82ms, 312.65ms, and 330.69ms. `source_filter` was verified for whitepaper, regulatory, market_data, case_study, news, and social_media; the first five returned only the requested source and social_media returned an empty result as expected because that source is temporarily skipped. 2026-04-26 update: Optimized the hybrid path following the Milvus v2.6 hybrid-search tutorial: native hybrid collections now store both dense `embedding` and BM25-derived `sparse_vector`, index dense with `AUTOINDEX` and sparse with `SPARSE_INVERTED_INDEX`, and query with `AnnSearchRequest` + `WeightedRanker`. Verified collection `cryptopulse_rag_hybrid_bge_m3_bm25` has fields `embedding` and `sparse_vector`, `row_count=1961`, native hybrid Recall@5=1.0 on the same 4-query benchmark, and source_filter works for all six source values.",
       "verification": [
         "BM25 可独立运行",
         "Recall@5 >= 0.75",
@@ -56,9 +62,11 @@
       "id": "RAG-005",
       "title": "Rerank 与 Chatbot 接口封装",
       "description": "加入 reranker 并稳定暴露接口。",
-      "dependencies": ["RAG-004"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "RAG-004"
+      ],
+      "status": "passing",
+      "evidence": "2026-04-26: Implemented `RerankingRetriever` with default `LexicalReranker` and optional `CrossEncoderReranker` behind `USE_CROSS_ENCODER_RERANKER=true`. Public `retrieve(query, top_k=5, source_filter=None)` now runs hybrid retrieval plus rerank; the base hybrid path uses Milvus native hybrid when `USE_MILVUS_NATIVE_HYBRID=true` and external BM25 + RRF otherwise. `retrieve_dense()`, `retrieve_bm25()`, `retrieve_hybrid()`, and `retrieve_reranked()` remain available for isolated checks. `get_context_for_llm(query, max_tokens=2000, top_k=5)` assembles ranked context with a token-budget approximation. Verified with `cd rag && .venv/bin/python -m unittest discover -s tests` (16 tests). Full-corpus BGE/Milvus retrieval with rerank returned Binance case-study results in 604.53ms. Warmed `get_context_for_llm('What does MiCA regulate in crypto assets?', max_tokens=800, top_k=3)` completed in 216.37ms and produced 3202 context characters. User provided local `BAAI/bge-reranker-base` cache at `/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base`; offline CrossEncoder load succeeded and scored test pairs. CrossEncoder rerank plus Milvus native hybrid returned regulatory results in 2857.51ms; warmed `get_context_for_llm` with CrossEncoder completed in 895.30ms.",
       "verification": [
         "retrieve 签名一致",
         "get_context_for_llm 签名一致",
@@ -69,9 +77,11 @@
       "id": "RAG-006",
       "title": "定时刷新与评估优化",
       "description": "定时刷新新闻与社媒并输出评估指标。",
-      "dependencies": ["RAG-005"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "RAG-005"
+      ],
+      "status": "in_progress",
+      "evidence": "2026-04-26: Added initial RAG-006 benchmark, Faithfulness proxy, and refresh scaffolding. `src.evaluation.benchmark` runs four retrieval benchmark cases and reports Recall@K plus latency; `src.evaluation.faithfulness` reports a grounded-answer lexical `generation_faithfulness` proxy; `src.jobs.refresh_index` loads normalized JSONL, reports source counts, supports dry-run, and can rebuild dense-only or Milvus native hybrid indexes. Verified with `cd rag && .venv/bin/python -m unittest discover -s tests` (19 tests), `.venv/bin/python -m compileall src tests`, and `.venv/bin/python -m src.jobs.refresh_index --input data/processed/normalized_documents.jsonl --dry-run` -> 44 docs across case_study=7, market_data=8, news=18, regulatory=6, whitepaper=5. Native hybrid + CrossEncoder benchmark against local Milvus collection `cryptopulse_rag_hybrid_bge_m3_bm25` returned Recall@5=1.0, average retrieval time 1374.60ms, wall time 16550.28ms. Faithfulness proxy against the same collection returned generation_faithfulness=1.0 and average retrieval time 1316.83ms. Remaining gap: social_media refresh remains intentionally skipped per user instruction.",
       "verification": [
         "refresh job 可运行",
         "输出 Recall@K、延迟、Faithfulness",
@@ -80,4 +90,3 @@
     }
   ]
 }
-

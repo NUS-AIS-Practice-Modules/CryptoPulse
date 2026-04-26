@@ -10,6 +10,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.playwright-mcp/
 *.pyc
 frontend/node_modules/
 frontend/dist/
@@ -21,4 +22,4 @@ lora/checkpoints/
 rag/data/
 rag/vectordb/
 chatbot/.cache/
-
+.idea

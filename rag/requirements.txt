@@ -1,7 +1,8 @@
-pymilvus
-sentence-transformers
-transformers
-rank-bm25
-python-dotenv
-httpx
-
+pymilvus>=2.6,<2.7
+sentence-transformers>=2.7,<3
+transformers>=4.40,<4.45
+huggingface-hub>=0.23,<1
+datasets>=2.19,<3
+rank-bm25>=0.2,<0.3
+python-dotenv>=1,<2
+httpx>=0.27,<1
