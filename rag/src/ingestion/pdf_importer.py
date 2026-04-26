@@ -10,6 +10,8 @@ from typing import Any
 
 from .normalizer import normalize_documents, write_jsonl
 
+MIN_TEXT_CHARS_BEFORE_OCR = 200
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Extract PDF text and normalize documents.")
@@ -77,7 +79,35 @@ def extract_pdf_text(path: str | Path) -> str:
             capture_output=True,
             text=True,
         )
-        return Path(output.name).read_text(encoding="utf-8", errors="replace")
+        text = Path(output.name).read_text(encoding="utf-8", errors="replace")
+
+    if len(text.strip()) >= MIN_TEXT_CHARS_BEFORE_OCR:
+        return text
+    return extract_pdf_text_with_ocr(pdf_path)
+
+
+def extract_pdf_text_with_ocr(path: str | Path) -> str:
+    pdf_path = Path(path)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        output_prefix = str(Path(tmp_dir) / "page")
+        subprocess.run(
+            ["pdftoppm", "-r", "200", "-png", str(pdf_path), output_prefix],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        texts = []
+        for image_path in sorted(Path(tmp_dir).glob("page-*.png")):
+            result = subprocess.run(
+                ["tesseract", str(image_path), "stdout", "-l", "eng"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            page_text = result.stdout.strip()
+            if page_text:
+                texts.append(page_text)
+        return "\n\n".join(texts)
 
 
 def _is_ok(record: dict[str, Any]) -> bool:
