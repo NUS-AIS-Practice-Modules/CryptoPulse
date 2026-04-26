@@ -1,0 +1,8 @@
+{
+  "BTC": {"overall": "Bullish", "bullish": 0.60, "bearish": 0.25, "neutral": 0.15, "sample_count": 15234},
+  "ETH": {"overall": "Neutral", "bullish": 0.38, "bearish": 0.35, "neutral": 0.27, "sample_count": 8901},
+  "SOL": {"overall": "Bullish", "bullish": 0.55, "bearish": 0.28, "neutral": 0.17, "sample_count": 4532},
+  "BNB": {"overall": "Neutral", "bullish": 0.40, "bearish": 0.33, "neutral": 0.27, "sample_count": 3210},
+  "XRP": {"overall": "Bearish", "bullish": 0.22, "bearish": 0.55, "neutral": 0.23, "sample_count": 6700},
+  "DOGE": {"overall": "Bullish", "bullish": 0.65, "bearish": 0.18, "neutral": 0.17, "sample_count": 9800}
+}
