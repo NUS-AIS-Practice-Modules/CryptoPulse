@@ -22,7 +22,7 @@ export function DashboardPage() {
         setLoading(true);
         setError(null);
         const [summaryData, healthData] = await Promise.all([
-          getSentimentSummary(),
+          getSentimentSummary(selectedRange),
           getHealthStatus()
         ]);
         setSummary(summaryData);

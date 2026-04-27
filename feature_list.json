@@ -14,7 +14,7 @@
       "owner": "integrator",
       "status": "passing",
       "target_date": "2026-04-19",
-      "evidence": "Root AGENTS.md, ARCHITECTURE.md, docs/*.md, shared/types.py, module docs, and init.sh added.",
+      "evidence": "Root AGENTS.md, ARCHITECTURE.md, docs/*.md, shared/types.py, module docs, and init.sh exist. 2026-04-27 update: LoRA was brought into the same root-level harness layout with AGENTS.md, ARCHITECTURE.md, FEATURES.md, SETUP.md, requirements.txt, and feature_list.json.",
       "gate": [
         "Root AGENTS.md exists",
         "All four modules contain AGENTS.md, ARCHITECTURE.md, FEATURES.md, SETUP.md, and feature_list.json",
@@ -27,9 +27,9 @@
       "title": "Modules runnable in isolation with mock-friendly setup",
       "description": "Each module can bootstrap its own environment and document a mock strategy before integration.",
       "owner": "each module owner",
-      "status": "not_started",
+      "status": "passing",
       "target_date": "2026-04-24",
-      "evidence": "",
+      "evidence": "2026-04-27: Frontend dependencies installed with `cd frontend && npm install` and verified with `npm run build`. Chatbot uses `chatbot/.venv`, installed `requirements.txt`, and passed `USE_MOCK=true .venv/bin/python -m pytest tests -q` (17 passed). LoRA uses `lora/.venv`, installed minimal harness `requirements.txt`, passed `.venv/bin/python -m compileall src scripts`, shell syntax checks, and `.venv/bin/python -m pytest tests -q` (4 passed). RAG continues to use `rag/.venv` and passed `.venv/bin/python -m unittest discover -s tests` (19 tests).",
       "gate": [
         "Frontend local startup command documented and runnable",
         "Chatbot supports USE_MOCK=true",
@@ -42,9 +42,9 @@
       "title": "Interfaces finalized and shared types aligned",
       "description": "Provider and consumer teams agree on all payloads, return shapes, and shared enums.",
       "owner": "integrator",
-      "status": "in_progress",
+      "status": "passing",
       "target_date": "2026-04-24",
-      "evidence": "Initial contracts and shared types committed during repository initialization.",
+      "evidence": "2026-04-27: No changes were required to `docs/INTERFACES.md` or `shared/types.py`. Frontend now adapts Chatbot REST response shapes without changing the contract. LoRA mock/fallback wrappers return `shared/types.py` dataclasses for `SentimentResult` and `GenerationResult`.",
       "gate": [
         "No unresolved type conflicts between docs/INTERFACES.md and shared/types.py",
         "DocumentSource includes all RAG source categories",
@@ -56,9 +56,9 @@
       "title": "LoRA and RAG integration-ready",
       "description": "Both provider modules expose real interfaces usable by Chatbot without mock mode.",
       "owner": "LoRA Owner + RAG Owner",
-      "status": "not_started",
+      "status": "in_progress",
       "target_date": "2026-04-30",
-      "evidence": "",
+      "evidence": "RAG is integration-ready at module level with real Milvus/BGE retrieval evidence. LoRA now exposes mock/fallback functions matching the shared interface. Real LoRA inference is deployed on an external AutoDL server; local code now has `LORA_REMOTE_BASE_URL` HTTP hooks for later connection, but the endpoint URL/auth still need to be supplied and verified.",
       "gate": [
         "LoRA interface functions callable with documented inputs",
         "RAG interface functions callable with documented inputs",
@@ -70,9 +70,9 @@
       "title": "Chatbot integrated with real providers",
       "description": "Chatbot disables mocks and completes end-to-end pipeline execution using real LoRA and RAG interfaces.",
       "owner": "Chatbot Owner",
-      "status": "not_started",
+      "status": "in_progress",
       "target_date": "2026-05-04",
-      "evidence": "",
+      "evidence": "2026-04-27: Chatbot mock-first API is verified with module tests and E2E HTTP checks. Later update: Chatbot config now includes AutoDL LoRA remote placeholders. Real provider mode is not marked complete until the AutoDL endpoint is connected and verified.",
       "gate": [
         "USE_MOCK=false path verified",
         "/api/chat returns reply, sentiment, entities, and sources",
@@ -84,9 +84,9 @@
       "title": "Frontend end-to-end integration",
       "description": "Frontend runs against the real Chatbot API and covers the main chat flow and dashboard summary flow.",
       "owner": "Frontend Owner",
-      "status": "not_started",
+      "status": "in_progress",
       "target_date": "2026-05-07",
-      "evidence": "",
+      "evidence": "2026-04-27: Frontend build passes and can run against the local Chatbot API with `VITE_USE_MOCK=false`. Mock-first E2E verified `Frontend -> Chatbot REST` reachability through `python scripts/verify_mock_first_e2e.py`, but the backend was still in `USE_MOCK=true`, so this is not yet full real-provider integration.",
       "gate": [
         "Frontend chat UI sends requests to the real API",
         "Sentiment summary page consumes backend data",
@@ -98,9 +98,9 @@
       "title": "Demo-ready full-system flow",
       "description": "Full system works without mocks and is ready for evaluation and presentation.",
       "owner": "integrator",
-      "status": "not_started",
+      "status": "in_progress",
       "target_date": "2026-05-10",
-      "evidence": "",
+      "evidence": "2026-04-27: A reproducible mock-first E2E verification script was added and passed while Chatbot and Frontend dev servers were running. Full no-mock demo readiness remains blocked by AutoDL LoRA endpoint connection/verification and RAG social_media coverage.",
       "gate": [
         "Full chat flow works without mocks",
         "Retrieval and sentiment outputs are visible in the system",
@@ -108,8 +108,7 @@
       ]
     }
   ],
-  "current_milestone": "milestone-003",
-  "last_updated": "2026-04-19",
+  "current_milestone": "milestone-004",
+  "last_updated": "2026-04-27",
   "updated_by": "Codex integrator"
 }
-

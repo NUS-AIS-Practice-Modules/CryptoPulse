@@ -28,6 +28,10 @@ LLM_BACKEND=openai
 OPENAI_API_KEY=sk-your-key-here    # only needed when USE_MOCK=false
 OPENAI_NER_MODEL=gpt-4o-mini
 OPENAI_CHAT_MODEL=gpt-4o-mini
+LORA_USE_MOCK=true
+LORA_REMOTE_BASE_URL=       # AutoDL LoRA server URL, when available
+LORA_REMOTE_API_KEY=
+LORA_REMOTE_TIMEOUT_SECONDS=30
 MAX_HISTORY_TURNS=5
 SENTIMENT_DATA_PATH=./data/sentiment_summary.json
 HOST=0.0.0.0

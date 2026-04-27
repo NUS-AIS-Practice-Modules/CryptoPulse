@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     openai_ner_model: str = "gpt-4o-mini"
     openai_chat_model: str = "gpt-4o-mini"
 
+    lora_use_mock: bool = True
+    lora_remote_base_url: str = ""
+    lora_remote_api_key: str = ""
+    lora_remote_timeout_seconds: float = 30.0
+
     max_history_turns: int = 5
     sentiment_data_path: str = "./data/sentiment_summary.json"
 

@@ -26,17 +26,26 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             {message.sentiment ? <p>Sentiment: {message.sentiment}</p> : null}
             {message.sources?.length ? (
               <div className="mt-2 flex flex-wrap gap-2">
-                {message.sources.map((source) => (
-                  <a
-                    key={source.url}
-                    href={source.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 transition hover:bg-slate-200"
-                  >
-                    {source.title}
-                  </a>
-                ))}
+                {message.sources.map((source, index) =>
+                  source.url ? (
+                    <a
+                      key={`${source.title}-${index}`}
+                      href={source.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 transition hover:bg-slate-200"
+                    >
+                      {source.title}
+                    </a>
+                  ) : (
+                    <span
+                      key={`${source.title}-${index}`}
+                      className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+                    >
+                      {source.title}
+                    </span>
+                  )
+                )}
               </div>
             ) : null}
           </div>

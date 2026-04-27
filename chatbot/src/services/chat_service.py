@@ -34,6 +34,12 @@ def _generate_reply(messages: list[dict]) -> str:
     if settings.llm_backend == "lora":
         import sys, os
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+        os.environ["LORA_USE_MOCK"] = "true" if settings.lora_use_mock else "false"
+        if settings.lora_remote_base_url:
+            os.environ["LORA_REMOTE_BASE_URL"] = settings.lora_remote_base_url
+        if settings.lora_remote_api_key:
+            os.environ["LORA_REMOTE_API_KEY"] = settings.lora_remote_api_key
+        os.environ["LORA_REMOTE_TIMEOUT_SECONDS"] = str(settings.lora_remote_timeout_seconds)
         from lora.src.inference import generate_response  # type: ignore
         # Flatten messages into a single prompt string for LoRA interface
         prompt = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in messages)

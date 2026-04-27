@@ -10,6 +10,41 @@ interface ChatPayload {
   file?: File | null;
 }
 
+interface ChatApiResponse {
+  reply: string;
+  conversation_id: string;
+  sentiment?: {
+    label?: "Bullish" | "Bearish" | "Neutral";
+    confidence?: number;
+    breakdown?: Record<string, number>;
+  } | null;
+  sources?: Array<{
+    title?: string;
+    url?: string;
+    relevance?: number;
+    snippet?: string;
+  }>;
+}
+
+interface SentimentSummaryApiResponse {
+  crypto: string;
+  period: string;
+  overall_sentiment: "Bullish" | "Bearish" | "Neutral";
+  trend: Array<{
+    date: string;
+    bullish: number;
+    bearish: number;
+    neutral: number;
+  }>;
+  top_topics: string[];
+  data_points_analyzed: number;
+}
+
+interface HealthApiResponse {
+  status: "ok" | "degraded" | "down";
+  modules?: Record<string, { status?: string; [key: string]: unknown }>;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   if (!headers.has("Content-Type") && !(options?.body instanceof FormData)) {
@@ -35,31 +70,56 @@ export async function sendChatMessage(payload: ChatPayload): Promise<ChatReply> 
     return buildMockReply(payload.message, payload.conversation_id);
   }
 
-  const body = payload.file
-    ? (() => {
-        const formData = new FormData();
-        formData.append("message", payload.message);
-        if (payload.conversation_id) {
-          formData.append("conversation_id", payload.conversation_id);
-        }
-        formData.append("file", payload.file);
-        return formData;
-      })()
-    : JSON.stringify(payload);
+  const body = JSON.stringify({
+    message: payload.message,
+    conversation_id: payload.conversation_id,
+    options: {
+      include_sentiment: true,
+      include_sources: true
+    }
+  });
 
-  return request<ChatReply>("/api/chat", {
+  const response = await request<ChatApiResponse>("/api/chat", {
     method: "POST",
     body
   });
+
+  return {
+    reply: response.reply,
+    conversation_id: response.conversation_id,
+    sentiment: response.sentiment?.label,
+    sources: response.sources?.map((source, index) => ({
+      title: source.title || `Source ${index + 1}`,
+      url: source.url,
+      relevance: source.relevance,
+      snippet: source.snippet
+    }))
+  };
 }
 
-export async function getSentimentSummary(): Promise<DashboardSummary> {
+export async function getSentimentSummary(period = "7d", crypto = "BTC"): Promise<DashboardSummary> {
   if (USE_MOCK) {
     await new Promise((resolve) => window.setTimeout(resolve, 500));
     return mockDashboardSummary;
   }
 
-  return request<DashboardSummary>("/api/sentiment/summary");
+  const params = new URLSearchParams({ crypto, period });
+  const response = await request<SentimentSummaryApiResponse>(`/api/sentiment/summary?${params}`);
+  const latest = response.trend[response.trend.length - 1] || { bullish: 0, bearish: 0, neutral: 0 };
+
+  return {
+    totalAnalyses: response.data_points_analyzed,
+    activeTopics: response.top_topics.length,
+    health: "Healthy",
+    lastUpdated: new Date().toLocaleString(),
+    trend: response.trend,
+    distribution: [
+      { name: "Bullish", value: latest.bullish },
+      { name: "Bearish", value: latest.bearish },
+      { name: "Neutral", value: latest.neutral }
+    ],
+    topTopics: response.top_topics
+  };
 }
 
 export async function getHealthStatus(): Promise<HealthStatus> {
@@ -68,5 +128,15 @@ export async function getHealthStatus(): Promise<HealthStatus> {
     return mockHealthStatus;
   }
 
-  return request<HealthStatus>("/api/health");
+  const response = await request<HealthApiResponse>("/api/health");
+  const modules = response.modules || {};
+  const moduleSummary = Object.entries(modules)
+    .map(([name, module]) => `${name}: ${module.status || "unknown"}`)
+    .join(", ");
+
+  return {
+    status: response.status,
+    message: moduleSummary || "Health endpoint reachable.",
+    modules
+  };
 }

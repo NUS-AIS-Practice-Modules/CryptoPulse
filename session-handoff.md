@@ -16,6 +16,11 @@
 - Local `BAAI/bge-reranker-base` cache is usable from `rag/.venv`
 - Milvus native hybrid collection `cryptopulse_rag_hybrid_bge_m3_bm25` has 1961 rows and passes Recall@5=1.0 on the current four-query benchmark
 - RAG-006 benchmark CLI, grounded-answer Faithfulness proxy, and refresh dry-run CLI pass initial verification
+- Frontend builds successfully with `npm run build` after installing module-local npm dependencies
+- Chatbot mock-mode tests pass from `chatbot/.venv`
+- LoRA now has root-level harness docs and a minimal mock/fallback inference wrapper matching the shared interfaces
+- Real LoRA inference is deployed on an external AutoDL server; local code has remote HTTP hooks but no endpoint URL/auth has been verified yet
+- Mock-first E2E passes with Frontend calling the local Chatbot REST API while Chatbot runs with `USE_MOCK=true`
 
 ## Changed This Session
 
@@ -41,20 +46,29 @@
 - Added Milvus native hybrid indexing/retrieval path using dense `embedding`, BM25-derived `sparse_vector`, `AUTOINDEX`, `SPARSE_INVERTED_INDEX`, `AnnSearchRequest`, and `WeightedRanker`
 - Recorded the Milvus native hybrid vs external BM25 + RRF decision in `rag/ARCHITECTURE.md` and `docs/DECISIONS.md`
 - Added RAG-006 `src.evaluation.benchmark`, `src.evaluation.faithfulness`, and `src.jobs.refresh_index` scaffolding
+- Added `chatbot/.env.example`
+- Updated Frontend API adapter to map Chatbot REST response shapes for chat, sentiment summary, and health
+- Fixed Frontend TypeScript build references so `tsc -b` checks existing app sources
+- Added LoRA root harness files: `AGENTS.md`, `ARCHITECTURE.md`, `FEATURES.md`, `SETUP.md`, `requirements.txt`, and `feature_list.json`
+- Added `lora/src/inference` mock/fallback wrappers and `lora/tests/test_inference.py`
+- Added AutoDL LoRA remote placeholders: `LORA_REMOTE_BASE_URL`, `LORA_REMOTE_API_KEY`, `LORA_REMOTE_TIMEOUT_SECONDS`, plus HTTP forwarding to `/predict_sentiment`, `/batch_predict_sentiment`, and `/generate_response`
+- Added reproducible mock-first E2E script at `scripts/verify_mock_first_e2e.py`
+- Updated root, frontend, chatbot, and lora feature trackers with evidence from actual verification commands
 
 ## Broken Or Unverified
 
-- Dependency installation paths are documented but not executed
 - Remote push flow is unverified in this session
 - RAG-001 real six-source corpus collection is not finished because social_media is still missing
 - RAG-006 Faithfulness is currently a local lexical proxy; generation-based Faithfulness still needs Chatbot integration
 - RAG-006 social refresh is not implemented because social_media is intentionally skipped
+- AutoDL LoRA endpoint is not connected or verified yet; current LoRA interface remains deterministic mock/fallback unless `LORA_REMOTE_BASE_URL` is configured
+- Full no-mock E2E is not verified because Chatbot real provider mode still depends on real LoRA inference
 
 ## Next Best Step
 
-- Highest-priority unfinished feature: continue `RAG-006`
-- Why it is next: benchmark, Faithfulness proxy, and refresh dry-run scaffolding now pass; refresh policy and generation-based Faithfulness are the remaining integration gaps
-- What counts as passing: refresh job runs for available sources and generation Faithfulness is either integrated with Chatbot or explicitly scoped as a proxy for this milestone
+- Highest-priority unfinished feature: AutoDL LoRA endpoint connection and Chatbot `USE_MOCK=false`
+- Why it is next: mock-first REST E2E now passes, RAG is already real-provider ready at module level, and LoRA is deployed externally on AutoDL
+- What counts as passing: `LORA_REMOTE_BASE_URL` points to a reachable AutoDL service, `predict_sentiment` and `generate_response` work through the remote hooks, Chatbot starts with `USE_MOCK=false`, and `/api/chat` returns reply, sentiment, entities, and sources without mock providers
 - What must not change during that step: shared contracts unless the change is coordinated via `docs/INTERFACES.md`
 
 ## Commands
@@ -75,3 +89,13 @@
 - RAG native hybrid benchmark: `cd rag && HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=true MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base BM25_INDEX_PATH=data/processed/bm25_index.json .venv/bin/python -m src.evaluation.benchmark --top-k 5`
 - RAG Faithfulness proxy: `cd rag && HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=true MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base BM25_INDEX_PATH=data/processed/bm25_index.json .venv/bin/python -m src.evaluation.faithfulness --top-k 5 --min-score 0.85`
 - RAG refresh dry-run: `cd rag && .venv/bin/python -m src.jobs.refresh_index --input data/processed/normalized_documents.jsonl --dry-run`
+- Frontend install: `cd frontend && npm install`
+- Frontend build: `cd frontend && npm run build`
+- Chatbot install: `cd chatbot && python -m venv .venv && .venv/bin/pip install -r requirements.txt`
+- Chatbot tests: `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q`
+- LoRA install: `cd lora && python -m venv .venv && .venv/bin/pip install -r requirements.txt`
+- LoRA compile: `cd lora && .venv/bin/python -m compileall src scripts`
+- LoRA tests: `cd lora && .venv/bin/python -m pytest tests -q`
+- Mock-first E2E services: `cd chatbot && USE_MOCK=true .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`; `cd frontend && VITE_USE_MOCK=false VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173`
+- Mock-first E2E verification: `python scripts/verify_mock_first_e2e.py`
+- AutoDL LoRA local wrapper check: `cd lora && LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=<autodl-url> .venv/bin/python -c "from src.inference import predict_sentiment; print(predict_sentiment('Bitcoin ETF approved'))"`

@@ -49,3 +49,16 @@ Reason:
 - It reduces application-layer coordination between a Milvus dense index and a separate BM25 JSON index
 - It keeps source filtering and dense/sparse fusion inside Milvus, while preserving the old path for isolated BM25 checks
 - Current full-corpus verification on `cryptopulse_rag_hybrid_bge_m3_bm25` returned Recall@5=1.0 on four benchmark queries
+
+## 2026-04-27 - LoRA AutoDL Deployment Boundary
+
+- Treat real LoRA inference as an external AutoDL service
+- Keep the local Python interface stable: `predict_sentiment`, `batch_predict_sentiment`, and `generate_response`
+- Route those functions to HTTP when `LORA_USE_MOCK=false` and `LORA_REMOTE_BASE_URL` is configured
+- Keep deterministic mock/fallback behavior for local harness and mock-first E2E
+
+Reason:
+
+- The real LoRA model is deployed on AutoDL rather than as local model assets in this repository
+- This lets Chatbot and Frontend integration continue without pretending local real-model inference is complete
+- The eventual AutoDL integration only needs endpoint URL/auth configuration if the server implements the documented response shapes

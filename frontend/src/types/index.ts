@@ -4,7 +4,9 @@ export type Sender = "user" | "assistant" | "system";
 
 export interface SourceLink {
   title: string;
-  url: string;
+  url?: string;
+  relevance?: number;
+  snippet?: string;
 }
 
 export interface ChatMessage {
@@ -48,4 +50,5 @@ export interface DashboardSummary {
 export interface HealthStatus {
   status: "ok" | "degraded" | "down";
   message: string;
+  modules?: Record<string, unknown>;
 }

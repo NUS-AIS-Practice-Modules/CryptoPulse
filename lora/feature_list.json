@@ -1,0 +1,79 @@
+{
+  "module": "lora",
+  "features": [
+    {
+      "id": "LORA-001",
+      "title": "多源数据收集与统一格式化",
+      "description": "收集并格式化 IFT 与情绪分类数据集。",
+      "dependencies": [],
+      "status": "not_started",
+      "evidence": "Owner planning docs exist under lora/documents, but no verified dataset build artifacts are present in this repository yet.",
+      "verification": [
+        "IFT 数据集完成 LLaMA-Factory JSON 格式化",
+        "情绪分类数据集完成统一格式化",
+        "dataset_info.json 注册完成"
+      ]
+    },
+    {
+      "id": "LORA-002",
+      "title": "Twitter 数据的价格弱监督打标",
+      "description": "基于价格窗口为无标签社交数据生成 Bullish/Bearish/Neutral 标签。",
+      "dependencies": [
+        "LORA-001"
+      ],
+      "status": "not_started",
+      "evidence": "No verified weak-labeling output is present in this repository yet.",
+      "verification": [
+        "弱监督脚本可运行",
+        "输出三类标签",
+        "标签分布合理"
+      ]
+    },
+    {
+      "id": "LORA-003",
+      "title": "阶段一 LoRA-IFT 通用金融指令微调",
+      "description": "使用 LLaMA-Factory 完成第一阶段金融指令微调。",
+      "dependencies": [
+        "LORA-001"
+      ],
+      "status": "not_started",
+      "evidence": "Training configs and shell scripts are present, but no GPU training run or checkpoint evidence is recorded yet.",
+      "verification": [
+        "训练配置有效",
+        "GPU 训练任务启动成功",
+        "loss 与 checkpoint 证据记录完成"
+      ]
+    },
+    {
+      "id": "LORA-004",
+      "title": "阶段二 LoRA-Sentiment 加密情绪微调与评估",
+      "description": "完成情绪分类微调并输出自动化评估指标。",
+      "dependencies": [
+        "LORA-003"
+      ],
+      "status": "not_started",
+      "evidence": "No verified sentiment training checkpoint or Macro-F1 report is recorded yet.",
+      "verification": [
+        "训练完成",
+        "Macro-F1 >= 0.80",
+        "Bullish/Bearish F1 >= 0.75"
+      ]
+    },
+    {
+      "id": "LORA-005",
+      "title": "LLM 推理管线与 API 接口封装",
+      "description": "提供 Chatbot 调用的 sentiment 与 generation Python 函数。",
+      "dependencies": [
+        "LORA-004"
+      ],
+      "status": "in_progress",
+      "evidence": "2026-04-27: Implemented deterministic mock/fallback wrappers for `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` under `lora/src/inference`. Verified with `cd lora && .venv/bin/python -m compileall src scripts`, shell syntax checks for existing scripts, and `.venv/bin/python -m pytest tests -q` (4 passed). Later update: recorded that the real LoRA model is deployed on an AutoDL server outside this repository and added `LORA_REMOTE_BASE_URL` HTTP forwarding hooks for `/predict_sentiment`, `/batch_predict_sentiment`, and `/generate_response`. The AutoDL URL and auth are still pending, so this remains in progress until the remote endpoint is connected and verified.",
+      "verification": [
+        "mock/fallback functions return shared dataclass shapes",
+        "invalid input raises ValueError",
+        "real mode without remote configuration raises RuntimeError",
+        "AutoDL remote LoRA endpoint integration succeeds"
+      ]
+    }
+  ]
+}

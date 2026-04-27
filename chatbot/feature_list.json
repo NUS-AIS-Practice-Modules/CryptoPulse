@@ -6,8 +6,8 @@
       "title": "API Service Skeleton",
       "description": "Initialize FastAPI, routes, and health check.",
       "dependencies": [],
-      "status": "not_started",
-      "evidence": "",
+      "status": "passing",
+      "evidence": "2026-04-27: Created module-local `chatbot/.venv` and installed `chatbot/requirements.txt` there after sandbox network restrictions required escalation. Added missing `chatbot/.env.example` so SETUP.md is reproducible. Verified with `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (17 passed) and mock-first E2E `/api/health` returned HTTP 200 with lora, rag, and ner module statuses.",
       "verification": [
         "pip install -r requirements.txt",
         "uvicorn src.app:app --reload",
@@ -18,9 +18,11 @@
       "id": "CB-001b",
       "title": "LLM-based NER Implementation",
       "description": "Implement the current NER backend and routing layer.",
-      "dependencies": ["CB-001"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "CB-001"
+      ],
+      "status": "passing",
+      "evidence": "2026-04-27: Existing NER service verified in mock mode by `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (17 passed). Test coverage confirms Bitcoin/BTC and Ethereum/ETH detection, CRYPTO entity typing, confidence range, and empty-string behavior.",
       "verification": [
         "Entity extraction returns expected crypto entities",
         "Output matches shared Entity shape",
@@ -31,9 +33,12 @@
       "id": "CB-004",
       "title": "Conversation Generation Pipeline",
       "description": "Implement the chat pipeline with mocks first.",
-      "dependencies": ["CB-001", "CB-001b"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "CB-001",
+        "CB-001b"
+      ],
+      "status": "passing",
+      "evidence": "2026-04-27: Mock chat pipeline verified with `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (17 passed), including response fields, conversation_id preservation, generated conversation_id, multi-turn isolation, empty message rejection, and mock latency < 3 seconds. Mock-first E2E `/api/chat` returned reply, sentiment, entities, sources, and conversation_id.",
       "verification": [
         "POST /api/chat returns HTTP 200 in mock mode",
         "Conversation history works across turns",
@@ -44,9 +49,11 @@
       "id": "CB-005",
       "title": "Sentiment Trend Summary",
       "description": "Implement GET /api/sentiment/summary.",
-      "dependencies": ["CB-001"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "CB-001"
+      ],
+      "status": "passing",
+      "evidence": "2026-04-27: Sentiment summary endpoint verified through the module tests and mock-first E2E. `curl -sS -m 8 'http://127.0.0.1:8000/api/sentiment/summary?crypto=BTC&period=7d'` returned HTTP 200 with crypto=BTC, period=7d, top_topics, data_points_analyzed, and seven trend rows.",
       "verification": [
         "Supported periods return HTTP 200",
         "Unsupported periods return HTTP 422",
@@ -57,9 +64,12 @@
       "id": "CB-006",
       "title": "Integration with Real LoRA and RAG",
       "description": "Switch Chatbot to real provider calls.",
-      "dependencies": ["CB-004", "CB-005"],
-      "status": "not_started",
-      "evidence": "",
+      "dependencies": [
+        "CB-004",
+        "CB-005"
+      ],
+      "status": "in_progress",
+      "evidence": "2026-04-27: Mock-first end-to-end path is verified, and RAG has real Milvus/BGE module-level evidence. LoRA exposes deterministic mock/fallback `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` wrappers. Later update: recorded that real LoRA inference is deployed on an AutoDL server and added Chatbot config placeholders `LORA_REMOTE_BASE_URL`, `LORA_REMOTE_API_KEY`, and `LORA_REMOTE_TIMEOUT_SECONDS` for later connection. Full `USE_MOCK=false` provider integration remains in progress until the AutoDL URL/auth are supplied and verified.",
       "verification": [
         "USE_MOCK=false path starts",
         "predict_sentiment succeeds",
@@ -69,4 +79,3 @@
     }
   ]
 }
-
