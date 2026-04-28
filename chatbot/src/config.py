@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     use_mock: bool = True
+    rag_use_mock: bool = False
     ner_backend: str = "llm"
     llm_backend: str = "openai"  # openai | lora
 
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
     lora_remote_base_url: str = ""
     lora_remote_api_key: str = ""
     lora_remote_timeout_seconds: float = 30.0
+    lora_sentiment_model: str = "sentiment-lora"
+    lora_chat_model: str = "ift-lora"
 
     max_history_turns: int = 5
     sentiment_data_path: str = "./data/sentiment_summary.json"

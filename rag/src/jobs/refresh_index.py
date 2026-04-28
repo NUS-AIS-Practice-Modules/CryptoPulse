@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 
-from src.indexing import IndexingConfig, index_corpus, load_normalized_documents
+from ..indexing import IndexingConfig, index_corpus, load_normalized_documents
 
 
 def main(argv: list[str] | None = None) -> int:

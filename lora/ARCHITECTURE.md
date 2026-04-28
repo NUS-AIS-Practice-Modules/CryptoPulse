@@ -39,7 +39,7 @@ Raw datasets
 
 Chatbot imports LoRA as Python functions. The wrapper currently supports deterministic mock/fallback behavior for integration testing.
 
-The real LoRA model is deployed on an AutoDL server outside this repository. The local wrapper is prepared for later HTTP integration through `LORA_REMOTE_BASE_URL`, forwarding the same Python functions to `/predict_sentiment`, `/batch_predict_sentiment`, and `/generate_response`.
+The real LoRA model is deployed on an AutoDL server outside this repository. The local wrapper connects through an SSH tunnel to an OpenAI-compatible vLLM API at `LORA_REMOTE_BASE_URL`, then calls `/chat/completions` with `sentiment-lora` for sentiment classification and `ift-lora` for response generation.
 
 ## Current Implementation Notes
 

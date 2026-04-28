@@ -10,8 +10,21 @@ from src.prompts.chat_prompt import build_messages
 logger = logging.getLogger(__name__)
 
 
+def _configure_lora_environment() -> None:
+    import os
+
+    os.environ["LORA_USE_MOCK"] = "true" if settings.lora_use_mock else "false"
+    if settings.lora_remote_base_url:
+        os.environ["LORA_REMOTE_BASE_URL"] = settings.lora_remote_base_url
+    if settings.lora_remote_api_key:
+        os.environ["LORA_REMOTE_API_KEY"] = settings.lora_remote_api_key
+    os.environ["LORA_REMOTE_TIMEOUT_SECONDS"] = str(settings.lora_remote_timeout_seconds)
+    os.environ["LORA_SENTIMENT_MODEL"] = settings.lora_sentiment_model
+    os.environ["LORA_CHAT_MODEL"] = settings.lora_chat_model
+
+
 def _get_rag_context(query: str) -> tuple[str, list[dict]]:
-    if settings.use_mock:
+    if settings.use_mock or settings.rag_use_mock:
         from src.mock.mock_rag import get_context_for_llm, retrieve
         context = get_context_for_llm(query)
         result = retrieve(query)
@@ -34,12 +47,7 @@ def _generate_reply(messages: list[dict]) -> str:
     if settings.llm_backend == "lora":
         import sys, os
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-        os.environ["LORA_USE_MOCK"] = "true" if settings.lora_use_mock else "false"
-        if settings.lora_remote_base_url:
-            os.environ["LORA_REMOTE_BASE_URL"] = settings.lora_remote_base_url
-        if settings.lora_remote_api_key:
-            os.environ["LORA_REMOTE_API_KEY"] = settings.lora_remote_api_key
-        os.environ["LORA_REMOTE_TIMEOUT_SECONDS"] = str(settings.lora_remote_timeout_seconds)
+        _configure_lora_environment()
         from lora.src.inference import generate_response  # type: ignore
         # Flatten messages into a single prompt string for LoRA interface
         prompt = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in messages)
@@ -70,7 +78,21 @@ async def handle_chat(
 
     # Step 2: Sentiment cache lookup (read-only, no real-time inference)
     sentiment: dict | None = None
-    if include_sentiment and crypto_entities:
+    if include_sentiment and not settings.use_mock and settings.llm_backend == "lora":
+        import sys, os
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+        _configure_lora_environment()
+        from lora.src.inference import predict_sentiment  # type: ignore
+
+        result = predict_sentiment(message)
+        sentiment = {
+            "overall": result.label,
+            "confidence": result.confidence,
+            "bullish": result.scores.get("bullish", 0.0),
+            "bearish": result.scores.get("bearish", 0.0),
+            "neutral": result.scores.get("neutral", 0.0),
+        }
+    elif include_sentiment and crypto_entities:
         # Use the first detected crypto for sentiment lookup
         sentiment = sentiment_cache.lookup(crypto_entities[0].text)
 
@@ -94,7 +116,7 @@ async def handle_chat(
     if sentiment and include_sentiment:
         sentiment_payload = {
             "label": sentiment["overall"],
-            "confidence": sentiment.get("bullish", 0.5),
+            "confidence": sentiment.get("confidence", sentiment.get("bullish", 0.5)),
             "breakdown": {
                 "bullish": sentiment.get("bullish", 0.0),
                 "bearish": sentiment.get("bearish", 0.0),

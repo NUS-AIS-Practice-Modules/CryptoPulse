@@ -6,7 +6,7 @@ import time
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from src.retrieval import retrieve
+from ..retrieval import retrieve
 
 
 @dataclass(frozen=True)

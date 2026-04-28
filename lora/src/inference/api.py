@@ -21,8 +21,12 @@ BULLISH_TERMS = {
     "breakout",
     "gain",
     "gains",
+    "inflows",
     "moon",
+    "pump",
+    "pumping",
     "rally",
+    "rallying",
     "up",
 }
 
@@ -46,6 +50,14 @@ def _mock_enabled() -> bool:
 
 def _remote_base_url() -> str:
     return os.getenv("LORA_REMOTE_BASE_URL", "").rstrip("/")
+
+
+def _sentiment_model() -> str:
+    return os.getenv("LORA_SENTIMENT_MODEL", "sentiment-lora")
+
+
+def _chat_model() -> str:
+    return os.getenv("LORA_CHAT_MODEL", "ift-lora")
 
 
 def _remote_timeout() -> float:
@@ -77,6 +89,22 @@ def _post_remote(path: str, payload: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError(f"AutoDL LoRA endpoint unavailable: {exc}") from exc
 
 
+def _chat_completion(model: str, messages: list[dict[str, str]], temperature: float, max_tokens: int) -> str:
+    response = _post_remote(
+        "/chat/completions",
+        {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        },
+    )
+    try:
+        return str(response["choices"][0]["message"]["content"])
+    except (KeyError, IndexError, TypeError) as exc:
+        raise RuntimeError("AutoDL LoRA response did not match OpenAI chat completion shape") from exc
+
+
 def _real_mode_unavailable() -> None:
     model_path = os.getenv("LORA_MODEL_PATH", "")
     if _remote_base_url():
@@ -98,19 +126,73 @@ def _tokens(text: str) -> set[str]:
     return set(re.findall(r"[a-zA-Z]+", text.lower()))
 
 
-def predict_sentiment(text: str) -> SentimentResult:
-    if not text or not text.strip():
-        raise ValueError("text cannot be empty")
-    if not _mock_enabled():
-        _real_mode_unavailable()
-        response = _post_remote("/predict_sentiment", {"text": text})
-        scores = response.get("scores") or response.get("breakdown") or {}
+def _normalize_label(raw: str) -> str:
+    value = raw.strip().lower()
+    if value in {"bull", "bullish", "positive"}:
+        return "Bullish"
+    if value in {"bear", "bearish", "negative"}:
+        return "Bearish"
+    return "Neutral"
+
+
+def _default_scores(label: str, confidence: float) -> dict[str, float]:
+    confidence = max(0.0, min(1.0, confidence))
+    remainder = max(0.0, 1.0 - confidence)
+    if label == "Bullish":
+        return {"bullish": confidence, "bearish": remainder / 2, "neutral": remainder / 2}
+    if label == "Bearish":
+        return {"bullish": remainder / 2, "bearish": confidence, "neutral": remainder / 2}
+    return {"bullish": remainder / 2, "bearish": remainder / 2, "neutral": confidence}
+
+
+def _normalize_scores(raw_scores: Any, label: str, confidence: float) -> dict[str, float]:
+    if not isinstance(raw_scores, dict):
+        return _default_scores(label, confidence)
+
+    scores = {"bullish": 0.0, "bearish": 0.0, "neutral": 0.0}
+    for key, value in raw_scores.items():
+        normalized_key = str(key).strip().lower()
+        if normalized_key in scores:
+            try:
+                scores[normalized_key] = float(value)
+            except (TypeError, ValueError):
+                continue
+    return scores
+
+
+def _sentiment_from_text(text: str) -> SentimentResult:
+    content = text.strip()
+    if content.startswith("```"):
+        content = re.sub(r"^```(?:json)?\s*", "", content, flags=re.IGNORECASE)
+        content = re.sub(r"\s*```$", "", content)
+
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", content, flags=re.DOTALL)
+        try:
+            payload = json.loads(match.group(0)) if match else None
+        except json.JSONDecodeError:
+            payload = None
+
+    if isinstance(payload, dict):
+        raw_label = str(payload.get("label") or payload.get("sentiment") or "")
+        label = _normalize_label(raw_label)
+        try:
+            confidence = float(payload.get("confidence", max(_default_scores(label, 0.6).values())))
+        except (TypeError, ValueError):
+            confidence = 0.6
+        raw_scores = payload.get("scores") or payload.get("breakdown")
         return SentimentResult(
-            label=str(response["label"]),
-            confidence=float(response["confidence"]),
-            scores={str(k): float(v) for k, v in scores.items()},
+            label=label,
+            confidence=max(0.0, min(1.0, confidence)),
+            scores=_normalize_scores(raw_scores, label, confidence),
         )
 
+    return _lexical_sentiment(content)
+
+
+def _lexical_sentiment(text: str) -> SentimentResult:
     terms = _tokens(text)
     bullish_hits = len(terms & BULLISH_TERMS)
     bearish_hits = len(terms & BEARISH_TERMS)
@@ -128,21 +210,36 @@ def predict_sentiment(text: str) -> SentimentResult:
     return SentimentResult(label=label, confidence=max(scores.values()), scores=scores)
 
 
+def predict_sentiment(text: str) -> SentimentResult:
+    if not text or not text.strip():
+        raise ValueError("text cannot be empty")
+    if not _mock_enabled():
+        _real_mode_unavailable()
+        content = _chat_completion(
+            model=_sentiment_model(),
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a crypto sentiment classifier. Return only JSON with "
+                        'label, confidence, and scores keys. Label must be Bullish, Bearish, or Neutral.'
+                    ),
+                },
+                {"role": "user", "content": text},
+            ],
+            temperature=0.1,
+            max_tokens=256,
+        )
+        return _sentiment_from_text(content)
+
+    return _lexical_sentiment(text)
+
+
 def batch_predict_sentiment(texts: list[str]) -> list[SentimentResult]:
     if not texts:
         raise ValueError("texts cannot be empty")
     if not _mock_enabled():
-        _real_mode_unavailable()
-        response = _post_remote("/batch_predict_sentiment", {"texts": texts})
-        items = response.get("results", response if isinstance(response, list) else [])
-        return [
-            SentimentResult(
-                label=str(item["label"]),
-                confidence=float(item["confidence"]),
-                scores={str(k): float(v) for k, v in (item.get("scores") or item.get("breakdown") or {}).items()},
-            )
-            for item in items
-        ]
+        return [predict_sentiment(text) for text in texts]
     return [predict_sentiment(text) for text in texts]
 
 
@@ -153,13 +250,22 @@ def generate_response(prompt: str, context: str = "", max_tokens: int = 512) -> 
         raise ValueError("max_tokens must be positive")
     if not _mock_enabled():
         _real_mode_unavailable()
-        response = _post_remote(
-            "/generate_response",
-            {"prompt": prompt, "context": context, "max_tokens": max_tokens},
+        user_content = prompt if not context.strip() else f"Context:\n{context.strip()}\n\nQuestion:\n{prompt.strip()}"
+        text = _chat_completion(
+            model=_chat_model(),
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a professional crypto research assistant. Answer concisely and factually.",
+                },
+                {"role": "user", "content": user_content},
+            ],
+            temperature=0.7,
+            max_tokens=max_tokens,
         )
         return GenerationResult(
-            text=str(response["text"]).replace("<|eot_id|>", ""),
-            model_name=str(response.get("model_name", "autodl-lora")),
+            text=text.replace("<|eot_id|>", "").strip(),
+            model_name=_chat_model(),
         )
 
     clean_prompt = prompt.strip().replace("<|eot_id|>", "")

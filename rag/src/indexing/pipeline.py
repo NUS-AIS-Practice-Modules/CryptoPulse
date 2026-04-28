@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from src.ingestion.normalizer import SOURCE_TYPES
+from ..ingestion.normalizer import SOURCE_TYPES
 
 from .bm25 import build_bm25_index, sparse_vectors_for_chunks
 from .chunker import ChunkedDocument, split_documents

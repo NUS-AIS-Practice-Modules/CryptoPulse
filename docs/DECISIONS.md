@@ -54,11 +54,26 @@ Reason:
 
 - Treat real LoRA inference as an external AutoDL service
 - Keep the local Python interface stable: `predict_sentiment`, `batch_predict_sentiment`, and `generate_response`
-- Route those functions to HTTP when `LORA_USE_MOCK=false` and `LORA_REMOTE_BASE_URL` is configured
+- Route those functions to the AutoDL OpenAI-compatible vLLM `/chat/completions` API when `LORA_USE_MOCK=false` and `LORA_REMOTE_BASE_URL` is configured
+- Use `sentiment-lora` for sentiment classification and `ift-lora` for response generation
 - Keep deterministic mock/fallback behavior for local harness and mock-first E2E
 
 Reason:
 
 - The real LoRA model is deployed on AutoDL rather than as local model assets in this repository
 - This lets Chatbot and Frontend integration continue without pretending local real-model inference is complete
-- The eventual AutoDL integration only needs endpoint URL/auth configuration if the server implements the documented response shapes
+- The verified AutoDL server exposes `llama3.1-8b-instruct`, `ift-lora`, and `sentiment-lora` through the local SSH tunnel at `127.0.0.1:6006`
+- Real API keys stay in local shell or `.env` only; they are not committed to repository files
+
+## 2026-04-28 - Full No-Mock Local Dependency Boundary
+
+- Preferred full no-mock Chatbot setup installs `rag/requirements.txt` into `chatbot/.venv`
+- If local network policy blocks that install, the documented local fallback is to add the existing `rag/.venv/lib/python3.11/site-packages` to `PYTHONPATH` only when starting Chatbot
+- Keep conda `base` untouched
+- Keep RAG and LoRA public interfaces unchanged
+
+Reason:
+
+- Chatbot must call real RAG and real AutoDL LoRA inside one service process for the demo
+- The current local environment blocked dependency installation into `chatbot/.venv`, but `rag/.venv` already contains the verified RAG runtime packages
+- Using a temporary `PYTHONPATH` bridge is explicit, reversible, and does not write dependencies into `base`

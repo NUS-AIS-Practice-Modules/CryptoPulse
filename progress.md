@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-04-27 20:30
-**Active Feature:** Integration harness and mock-first E2E in progress
+**Last Updated:** 2026-04-28 21:20
+**Active Feature:** Full no-mock provider integration in progress
 
 ## Status
 
@@ -29,6 +29,9 @@
 - [x] Chatbot `.env.example` added so module setup matches `SETUP.md`
 - [x] Mock-first E2E verification script added at `scripts/verify_mock_first_e2e.py`
 - [x] AutoDL LoRA deployment decision recorded: the real LoRA model lives on an external AutoDL server, and local wrappers now expose `LORA_REMOTE_BASE_URL` hooks for later HTTP integration
+- [x] AutoDL LoRA OpenAI-compatible vLLM integration implemented and verified through the local SSH tunnel
+- [x] Chatbot `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora` isolated path verified with AutoDL LoRA and mock RAG
+- [x] Full no-mock preparation added: RAG imports are package-compatible inside the Chatbot process, `/api/health` probes the configured Milvus collection, `scripts/verify_full_no_mock_e2e.py` exists, and the root `README.md` now documents Milvus, AutoDL tunnel, Chatbot, Frontend, and recording flow
 
 ### What's In Progress
 
@@ -38,19 +41,16 @@
 - [ ] Finish RAG-006 refresh/evaluation work
   - Details: benchmark CLI, grounded-answer Faithfulness proxy, and refresh dry-run CLI are implemented; native hybrid + CrossEncoder benchmark passes against local Milvus
   - Blockers: social refresh still depends on the temporarily skipped social_media source; real generation Faithfulness depends on Chatbot integration
-- [ ] Finish AutoDL LoRA inference integration
-  - Details: the repository now has deterministic mock/fallback wrappers and HTTP forwarding hooks for the AutoDL server
-  - Blockers: AutoDL base URL, optional auth token, and endpoint verification are still pending
 - [ ] Finish no-mock full-system demo flow
-  - Details: Frontend -> Chatbot REST works in mock-first mode
-  - Blockers: Chatbot `USE_MOCK=false` still depends on real LoRA inference and final provider wiring
+  - Details: Frontend -> Chatbot REST works in mock-first mode; Chatbot -> AutoDL LoRA works with mock RAG; Chatbot can import real RAG provider code after package import fixes
+  - Blockers: current local AutoDL tunnel endpoint `127.0.0.1:6006` was not reachable during the latest verification attempt; direct RAG smoke also remained running in cold-start/provider probe and could not be killed by Codex because escalation quota was unavailable
 
 ### What's Next
 
 1. Decide refresh behavior for news with current PDF/web corpus
 2. Replace the local Faithfulness proxy with generation-based Faithfulness after Chatbot integration is available
 3. Add a documented/importable social_media source when available
-4. Fill `LORA_REMOTE_BASE_URL` for the AutoDL LoRA server and verify Chatbot `USE_MOCK=false`
+4. Reopen or repair the AutoDL tunnel, then run Chatbot full no-mock with real RAG and AutoDL LoRA using the README command
 
 ## Blockers / Risks
 
@@ -59,8 +59,9 @@
 - [ ] Real corpus collection still needs a social_media source decision
 - [ ] RAG-006 social refresh remains blocked by the intentionally skipped social_media source
 - [ ] RAG-006 currently uses a local lexical Faithfulness proxy, not a generation-based evaluator
-- [ ] AutoDL LoRA endpoint is not connected yet; current local wrappers are mock/fallback unless `LORA_REMOTE_BASE_URL` is configured
 - [ ] Mock-first E2E is verified, but full no-mock E2E is not yet passing by design
+- [ ] AutoDL API key must stay local-only and must not be committed
+- [ ] Current environment blocked `chatbot/.venv/bin/pip install -r rag/requirements.txt` through sandbox network restrictions; documented fallback is to export `PYTHONPATH` to the existing `rag/.venv` site-packages
 
 ## Decisions Made
 
@@ -85,6 +86,10 @@
   - Context: the real LoRA model is deployed on AutoDL rather than inside the local repository
   - Alternatives considered: require local model checkpoint loading before continuing integration
   - Reason: local modules can keep moving by preserving the Python interface and adding remote HTTP hooks while waiting for the AutoDL URL/auth details
+- **LoRA remote protocol**: Use AutoDL's OpenAI-compatible vLLM `/chat/completions` API
+  - Context: the tunnel returned models `llama3.1-8b-instruct`, `ift-lora`, and `sentiment-lora`; direct chat-completions calls succeeded
+  - Alternatives considered: keep custom `/predict_sentiment` and `/generate_response` endpoints
+  - Reason: the deployed server already provides OpenAI-compatible chat completions, so matching that protocol avoids an unnecessary gateway
 
 ## Evidence of Completion
 
@@ -111,7 +116,13 @@
 - [x] 2026-04-27: RAG re-verification passed with `cd rag && .venv/bin/python -m unittest discover -s tests` (19 tests).
 - [x] 2026-04-27: Mock-first E2E passed. Started Chatbot with `USE_MOCK=true .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000` and Frontend with `VITE_USE_MOCK=false VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173`; `python scripts/verify_mock_first_e2e.py` returned `mock-first e2e ok`.
 - [x] 2026-04-27: Added AutoDL remote LoRA interface placeholders. `lora/src/inference` can forward `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` to `LORA_REMOTE_BASE_URL`; Chatbot `.env.example` and settings now include `LORA_REMOTE_BASE_URL`, `LORA_REMOTE_API_KEY`, and `LORA_REMOTE_TIMEOUT_SECONDS`.
+- [x] 2026-04-28: Replaced the custom AutoDL endpoint placeholder with OpenAI-compatible vLLM `/chat/completions`. Direct real-mode LoRA verification through the local tunnel returned normalized Bullish sentiment with scores and non-empty `ift-lora` generation text.
+- [x] 2026-04-28: Chatbot isolated real-LoRA verification passed with `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false`; `/api/chat` returned AutoDL LoRA reply, Bullish sentiment, BTC entity via fallback NER, and mock RAG sources.
+- [x] 2026-04-28: Regression checks passed after the LoRA/Chatbot integration changes: `cd lora && .venv/bin/python -m pytest tests -q` (7 passed) and `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (18 passed).
+- [x] 2026-04-28: Full no-mock implementation prep added `scripts/verify_full_no_mock_e2e.py`, package-compatible RAG imports for Chatbot, and Milvus collection probing in Chatbot health. `chatbot/.venv/bin/python -c "from rag.src.retrieval import retrieve, get_context_for_llm; ..."` and `cd rag && .venv/bin/python -c "from src.retrieval import retrieve, get_context_for_llm; ..."` both imported successfully after the RAG import fix.
+- [x] 2026-04-28: Regression after full no-mock prep passed: `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (19 passed), `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), `cd frontend && npm run build` passed with the existing Vite chunk-size warning, `cd rag && .venv/bin/python -m unittest discover -s tests` (19 tests OK), `./init.sh` passed, JSON tracker validation passed, `git diff --check` passed, and `rg -n "sk-crypto" --glob '!lora/autodl_lora.md'` returned no tracked-file matches.
+- [ ] 2026-04-28: Full no-mock E2E is still blocked in this environment because `curl http://127.0.0.1:6006/v1/models` returns connection refused; `scripts/verify_full_no_mock_e2e.py` should be run after the AutoDL tunnel is reachable again.
 
 ## Notes for Next Session
 
-Continue with real provider integration. The next practical target is filling the AutoDL LoRA endpoint settings, then Chatbot `USE_MOCK=false`, then generation-based Faithfulness and full no-mock E2E. RAG-001 social_media remains a documented temporary skip per user instruction.
+Continue with real provider integration. The next practical target is Chatbot `USE_MOCK=false` with real RAG plus verified AutoDL LoRA, then generation-based Faithfulness and full no-mock E2E. RAG-001 social_media remains a documented temporary skip per user instruction.

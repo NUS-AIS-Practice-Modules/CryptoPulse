@@ -23,17 +23,17 @@ Rules:
 - EVENT: Short descriptive label. e.g., "Bitcoin Halving", "FTX Collapse", "ETF Approval"
 
 Return ONLY valid JSON (no markdown, no explanation):
-{
+{{
   "entities": [
-    {
+    {{
       "normalized": "BTC",
       "original_mention": "Bitcoin",
       "type": "CRYPTO",
       "confidence": 0.95
-    }
+    }}
   ]
-}
-If no entities found, return: {"entities": []}
+}}
+If no entities found, return: {{"entities": []}}
 
 Text: {text}"""
 
@@ -43,6 +43,35 @@ def _find_offset(text: str, mention: str) -> tuple[int, int]:
     if idx == -1:
         return 0, 0
     return idx, idx + len(mention)
+
+
+def _fallback_entities(text: str) -> list[Entity]:
+    known = {
+        "bitcoin": "BTC", "btc": "BTC",
+        "ethereum": "ETH", "eth": "ETH",
+        "solana": "SOL", "sol": "SOL",
+        "binance coin": "BNB", "bnb": "BNB",
+        "ripple": "XRP", "xrp": "XRP",
+        "dogecoin": "DOGE", "doge": "DOGE",
+    }
+    lower = text.lower()
+    seen: set[str] = set()
+    entities: list[Entity] = []
+    for mention, ticker in known.items():
+        if ticker in seen:
+            continue
+        start = lower.find(mention)
+        if start == -1:
+            continue
+        entities.append(Entity(
+            text=ticker,
+            type="CRYPTO",
+            start=start,
+            end=start + len(mention),
+            confidence=0.75,
+        ))
+        seen.add(ticker)
+    return entities
 
 
 def extract_entities(text: str) -> list[Entity]:
@@ -63,7 +92,7 @@ def extract_entities(text: str) -> list[Entity]:
         raw = response.choices[0].message.content or "{}"
     except Exception as e:
         logger.error("OpenAI NER call failed: %s", e)
-        return []
+        return _fallback_entities(text)
 
     try:
         data = json.loads(raw)
@@ -82,4 +111,4 @@ def extract_entities(text: str) -> list[Entity]:
         return entities
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         logger.error("NER JSON parse failed: %s | raw=%s", e, raw[:200])
-        return []
+        return _fallback_entities(text)

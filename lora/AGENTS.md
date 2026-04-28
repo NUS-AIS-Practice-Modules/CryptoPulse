@@ -31,7 +31,7 @@ LoRA does not own:
 
 ## Mock Strategy
 
-The inference wrapper defaults to a deterministic mock/fallback mode so Chatbot can integrate before GPU training is complete. The real LoRA runtime is expected on an AutoDL server; set `LORA_USE_MOCK=false` with `LORA_REMOTE_BASE_URL` when that endpoint is ready to connect.
+The inference wrapper defaults to a deterministic mock/fallback mode so Chatbot can integrate before GPU training is complete. The real LoRA runtime is expected on an AutoDL OpenAI-compatible vLLM server; set `LORA_USE_MOCK=false` with `LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1` after opening the SSH tunnel.
 
 ## Verification
 

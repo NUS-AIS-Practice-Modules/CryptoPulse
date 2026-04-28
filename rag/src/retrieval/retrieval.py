@@ -7,9 +7,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Protocol
 
-from src.indexing.bm25 import BM25Index, sparse_vector_for_text
-from src.indexing.embeddings import EmbeddingProvider, HashEmbeddingProvider, SentenceTransformerEmbeddingProvider
-from src.ingestion.normalizer import SOURCE_TYPES
+from ..indexing.bm25 import BM25Index, sparse_vector_for_text
+from ..indexing.embeddings import EmbeddingProvider, HashEmbeddingProvider, SentenceTransformerEmbeddingProvider
+from ..ingestion.normalizer import SOURCE_TYPES
 from .rerank import CrossEncoderReranker, LexicalReranker, Reranker
 
 try:

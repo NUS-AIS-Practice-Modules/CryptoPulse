@@ -6,12 +6,12 @@ import re
 from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
-from src.retrieval import retrieve
+from ..retrieval import retrieve
 
 try:
     from shared.types import RetrievalResult
 except ImportError:
-    from src.retrieval.retrieval import RetrievalResult
+    from ..retrieval.retrieval import RetrievalResult
 
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9$%-]*")

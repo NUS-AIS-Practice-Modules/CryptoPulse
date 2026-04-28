@@ -56,9 +56,9 @@
       "title": "LoRA and RAG integration-ready",
       "description": "Both provider modules expose real interfaces usable by Chatbot without mock mode.",
       "owner": "LoRA Owner + RAG Owner",
-      "status": "in_progress",
+      "status": "passing",
       "target_date": "2026-04-30",
-      "evidence": "RAG is integration-ready at module level with real Milvus/BGE retrieval evidence. LoRA now exposes mock/fallback functions matching the shared interface. Real LoRA inference is deployed on an external AutoDL server; local code now has `LORA_REMOTE_BASE_URL` HTTP hooks for later connection, but the endpoint URL/auth still need to be supplied and verified.",
+      "evidence": "RAG is integration-ready at module level with real Milvus/BGE retrieval evidence. 2026-04-28: LoRA provider readiness verified through the AutoDL OpenAI-compatible vLLM tunnel: direct `predict_sentiment` returned normalized Bullish sentiment and `generate_response` returned non-empty `ift-lora` text. Local wrapper preserves the shared Python interface and uses local-only env vars for endpoint/auth.",
       "gate": [
         "LoRA interface functions callable with documented inputs",
         "RAG interface functions callable with documented inputs",
@@ -72,7 +72,7 @@
       "owner": "Chatbot Owner",
       "status": "in_progress",
       "target_date": "2026-05-04",
-      "evidence": "2026-04-27: Chatbot mock-first API is verified with module tests and E2E HTTP checks. Later update: Chatbot config now includes AutoDL LoRA remote placeholders. Real provider mode is not marked complete until the AutoDL endpoint is connected and verified.",
+      "evidence": "2026-04-27: Chatbot mock-first API is verified with module tests and E2E HTTP checks. 2026-04-28: Chatbot `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false` was verified against AutoDL LoRA and returned reply, sentiment, entity, and mock RAG sources. 2026-04-28 full no-mock preparation added package-compatible RAG imports, real Milvus collection probing in `/api/health`, full provider startup documentation, and `scripts/verify_full_no_mock_e2e.py`. Full real-provider mode is not marked complete until the same Chatbot run passes with `RAG_USE_MOCK=false` and reachable AutoDL LoRA.",
       "gate": [
         "USE_MOCK=false path verified",
         "/api/chat returns reply, sentiment, entities, and sources",
@@ -100,7 +100,7 @@
       "owner": "integrator",
       "status": "in_progress",
       "target_date": "2026-05-10",
-      "evidence": "2026-04-27: A reproducible mock-first E2E verification script was added and passed while Chatbot and Frontend dev servers were running. Full no-mock demo readiness remains blocked by AutoDL LoRA endpoint connection/verification and RAG social_media coverage.",
+      "evidence": "2026-04-27: A reproducible mock-first E2E verification script was added and passed while Chatbot and Frontend dev servers were running. 2026-04-28: real AutoDL LoRA plus mock RAG Chatbot API path passed. Full no-mock demo readiness remains blocked by enabling real RAG in Chatbot and RAG social_media coverage.",
       "gate": [
         "Full chat flow works without mocks",
         "Retrieval and sentiment outputs are visible in the system",
@@ -108,7 +108,7 @@
       ]
     }
   ],
-  "current_milestone": "milestone-004",
-  "last_updated": "2026-04-27",
+  "current_milestone": "milestone-005",
+  "last_updated": "2026-04-28",
   "updated_by": "Codex integrator"
 }

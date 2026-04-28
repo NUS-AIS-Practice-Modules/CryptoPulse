@@ -26,3 +26,17 @@ def test_health_structure():
 def test_health_ner_backend():
     resp = client.get("/api/health")
     assert resp.json()["modules"]["ner"]["status"] == "ok"
+
+
+def test_rag_health_probe_reports_unavailable_without_dependency(monkeypatch):
+    from src.routes import health as health_route
+
+    class BrokenClient:
+        def __init__(self, **kwargs):
+            raise RuntimeError("milvus unavailable")
+
+    monkeypatch.setattr(health_route, "_milvus_client_class", lambda: BrokenClient)
+    data = health_route._probe_rag_status()
+    assert data["status"] == "unavailable"
+    assert data["documents_indexed"] == 0
+    assert data["collection"]

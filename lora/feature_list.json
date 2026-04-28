@@ -66,8 +66,8 @@
       "dependencies": [
         "LORA-004"
       ],
-      "status": "in_progress",
-      "evidence": "2026-04-27: Implemented deterministic mock/fallback wrappers for `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` under `lora/src/inference`. Verified with `cd lora && .venv/bin/python -m compileall src scripts`, shell syntax checks for existing scripts, and `.venv/bin/python -m pytest tests -q` (4 passed). Later update: recorded that the real LoRA model is deployed on an AutoDL server outside this repository and added `LORA_REMOTE_BASE_URL` HTTP forwarding hooks for `/predict_sentiment`, `/batch_predict_sentiment`, and `/generate_response`. The AutoDL URL and auth are still pending, so this remains in progress until the remote endpoint is connected and verified.",
+      "status": "passing",
+      "evidence": "2026-04-27: Implemented deterministic mock/fallback wrappers for `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` under `lora/src/inference`. 2026-04-28 update: replaced the temporary custom endpoint plan with the verified AutoDL OpenAI-compatible vLLM `/chat/completions` integration. `predict_sentiment` uses `sentiment-lora`, normalizes lower-case labels, and fills missing scores; `generate_response` uses `ift-lora` and strips `<|eot_id|>`. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), direct AutoDL real-mode calls through the local SSH tunnel returning Bullish sentiment and non-empty ift-lora text, and Chatbot isolated `USE_MOCK=false RAG_USE_MOCK=true` API verification.",
       "verification": [
         "mock/fallback functions return shared dataclass shapes",
         "invalid input raises ValueError",

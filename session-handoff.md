@@ -19,8 +19,11 @@
 - Frontend builds successfully with `npm run build` after installing module-local npm dependencies
 - Chatbot mock-mode tests pass from `chatbot/.venv`
 - LoRA now has root-level harness docs and a minimal mock/fallback inference wrapper matching the shared interfaces
-- Real LoRA inference is deployed on an external AutoDL server; local code has remote HTTP hooks but no endpoint URL/auth has been verified yet
+- Real LoRA inference is deployed on an external AutoDL OpenAI-compatible vLLM server and is verified through the local SSH tunnel
 - Mock-first E2E passes with Frontend calling the local Chatbot REST API while Chatbot runs with `USE_MOCK=true`
+- Chatbot isolated real-LoRA path passes with `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false`
+- Chatbot can import real RAG retrieval symbols from `rag.src.retrieval` after RAG package import fixes
+- Chatbot `/api/health` now probes the configured Milvus collection and reports unavailable details instead of a fixed RAG document count
 
 ## Changed This Session
 
@@ -51,9 +54,15 @@
 - Fixed Frontend TypeScript build references so `tsc -b` checks existing app sources
 - Added LoRA root harness files: `AGENTS.md`, `ARCHITECTURE.md`, `FEATURES.md`, `SETUP.md`, `requirements.txt`, and `feature_list.json`
 - Added `lora/src/inference` mock/fallback wrappers and `lora/tests/test_inference.py`
-- Added AutoDL LoRA remote placeholders: `LORA_REMOTE_BASE_URL`, `LORA_REMOTE_API_KEY`, `LORA_REMOTE_TIMEOUT_SECONDS`, plus HTTP forwarding to `/predict_sentiment`, `/batch_predict_sentiment`, and `/generate_response`
+- Replaced AutoDL custom endpoint placeholders with OpenAI-compatible vLLM `/chat/completions` calls
+- Added AutoDL LoRA settings: `LORA_REMOTE_BASE_URL`, `LORA_REMOTE_API_KEY`, `LORA_REMOTE_TIMEOUT_SECONDS`, `LORA_SENTIMENT_MODEL`, and `LORA_CHAT_MODEL`
+- Added Chatbot `RAG_USE_MOCK` isolation mode for real-LoRA testing without requiring local RAG/Milvus in the same service run
+- Fixed LLM NER prompt brace escaping and added fallback keyword entities when OpenAI NER is unavailable
 - Added reproducible mock-first E2E script at `scripts/verify_mock_first_e2e.py`
 - Updated root, frontend, chatbot, and lora feature trackers with evidence from actual verification commands
+- Added `scripts/verify_full_no_mock_e2e.py` for full real-provider verification
+- Rewrote the root `README.md` with setup, Milvus, AutoDL tunnel, full no-mock startup, recording, verification, and troubleshooting instructions
+- Updated `chatbot/SETUP.md` and `.env.example` with full no-mock RAG/LoRA environment variables
 
 ## Broken Or Unverified
 
@@ -61,15 +70,19 @@
 - RAG-001 real six-source corpus collection is not finished because social_media is still missing
 - RAG-006 Faithfulness is currently a local lexical proxy; generation-based Faithfulness still needs Chatbot integration
 - RAG-006 social refresh is not implemented because social_media is intentionally skipped
-- AutoDL LoRA endpoint is not connected or verified yet; current LoRA interface remains deterministic mock/fallback unless `LORA_REMOTE_BASE_URL` is configured
-- Full no-mock E2E is not verified because Chatbot real provider mode still depends on real LoRA inference
+- Full no-mock E2E is not verified because Chatbot still needs a same-run real RAG plus real AutoDL LoRA path
+- The AutoDL API key must remain local-only; do not write it into tracked files
+- Latest attempt found `127.0.0.1:6006` unavailable even though an SSH tunnel process existed; the remote vLLM side likely needs to be restarted or the tunnel reopened
+- Installing `rag/requirements.txt` into `chatbot/.venv` was blocked by sandbox network restrictions; current README documents a no-download fallback using the existing `rag/.venv` site-packages on `PYTHONPATH`
+- A direct real RAG smoke process remained running during the latest attempt and Codex could not kill it because escalation quota was unavailable; check process `82305` if it is still present before retrying heavy RAG smoke
 
 ## Next Best Step
 
-- Highest-priority unfinished feature: AutoDL LoRA endpoint connection and Chatbot `USE_MOCK=false`
-- Why it is next: mock-first REST E2E now passes, RAG is already real-provider ready at module level, and LoRA is deployed externally on AutoDL
-- What counts as passing: `LORA_REMOTE_BASE_URL` points to a reachable AutoDL service, `predict_sentiment` and `generate_response` work through the remote hooks, Chatbot starts with `USE_MOCK=false`, and `/api/chat` returns reply, sentiment, entities, and sources without mock providers
+- Highest-priority unfinished feature: Chatbot `USE_MOCK=false` with real RAG and verified AutoDL LoRA in the same run
+- Why it is next: mock-first REST E2E passes, RAG is real-provider ready at module level, and AutoDL LoRA is now verified
+- What counts as passing: Chatbot starts with `USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false`, `/api/chat` returns reply, sentiment, entities, and real RAG sources, and full frontend-to-backend E2E passes without module mocks
 - What must not change during that step: shared contracts unless the change is coordinated via `docs/INTERFACES.md`
+ - Immediate prerequisite: make `curl http://127.0.0.1:6006/v1/models -H "Authorization: Bearer $LORA_REMOTE_API_KEY"` return the AutoDL model list again
 
 ## Commands
 
@@ -98,4 +111,7 @@
 - LoRA tests: `cd lora && .venv/bin/python -m pytest tests -q`
 - Mock-first E2E services: `cd chatbot && USE_MOCK=true .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`; `cd frontend && VITE_USE_MOCK=false VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173`
 - Mock-first E2E verification: `python scripts/verify_mock_first_e2e.py`
-- AutoDL LoRA local wrapper check: `cd lora && LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=<autodl-url> .venv/bin/python -c "from src.inference import predict_sentiment; print(predict_sentiment('Bitcoin ETF approved'))"`
+- AutoDL LoRA local wrapper check: `cd lora && LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY .venv/bin/python -c "from src.inference import predict_sentiment; print(predict_sentiment('Bitcoin ETF approved'))"`
+- Chatbot isolated real-LoRA check: `cd chatbot && USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
+- Chatbot full no-mock check: `cd chatbot && export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages && export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH" && USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=false MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base BM25_INDEX_PATH=../rag/data/processed/bm25_index.json HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
+- Full no-mock E2E verification: `python scripts/verify_full_no_mock_e2e.py`

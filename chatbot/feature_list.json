@@ -69,12 +69,13 @@
         "CB-005"
       ],
       "status": "in_progress",
-      "evidence": "2026-04-27: Mock-first end-to-end path is verified, and RAG has real Milvus/BGE module-level evidence. LoRA exposes deterministic mock/fallback `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` wrappers. Later update: recorded that real LoRA inference is deployed on an AutoDL server and added Chatbot config placeholders `LORA_REMOTE_BASE_URL`, `LORA_REMOTE_API_KEY`, and `LORA_REMOTE_TIMEOUT_SECONDS` for later connection. Full `USE_MOCK=false` provider integration remains in progress until the AutoDL URL/auth are supplied and verified.",
+      "evidence": "2026-04-27: Mock-first end-to-end path is verified, and RAG has real Milvus/BGE module-level evidence. 2026-04-28 update: Chatbot now supports `RAG_USE_MOCK=true` isolation and can call the verified AutoDL OpenAI-compatible LoRA service with `USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false`. Verified `/api/chat` returned an AutoDL LoRA reply, Bullish sentiment from `sentiment-lora`, fallback BTC entity extraction, and mock RAG sources. 2026-04-28 full no-mock preparation: RAG package imports were made compatible with `from rag.src.retrieval import ...` inside the Chatbot process, `/api/health` now probes the configured Milvus collection instead of returning a fixed document count, and `scripts/verify_full_no_mock_e2e.py` was added. Full all-real provider integration remains in progress until the AutoDL tunnel is reachable and the same Chatbot run passes the full no-mock E2E script.",
       "verification": [
         "USE_MOCK=false path starts",
         "predict_sentiment succeeds",
         "get_context_for_llm returns non-empty context",
-        "pytest tests/ passes"
+        "pytest tests/ passes",
+        "python scripts/verify_full_no_mock_e2e.py passes while Frontend and Chatbot are running"
       ]
     }
   ]

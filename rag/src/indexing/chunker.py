@@ -5,7 +5,7 @@ import re
 from dataclasses import asdict, dataclass
 from typing import Any, Iterable, Mapping
 
-from src.ingestion.normalizer import SOURCE_TYPES, clean_text
+from ..ingestion.normalizer import SOURCE_TYPES, clean_text
 
 
 DEFAULT_CHUNK_SIZE_CHARS = 1600

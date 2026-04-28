@@ -39,34 +39,48 @@ def test_real_mode_without_model_path_raises(monkeypatch):
 
 def test_real_mode_uses_remote_sentiment_endpoint(monkeypatch):
     monkeypatch.setenv("LORA_USE_MOCK", "false")
-    monkeypatch.setenv("LORA_REMOTE_BASE_URL", "https://autodl.example")
+    monkeypatch.setenv("LORA_REMOTE_BASE_URL", "https://autodl.example/v1")
 
     def fake_post(path, payload):
-        assert path == "/predict_sentiment"
-        assert payload == {"text": "Bitcoin rally"}
+        assert path == "/chat/completions"
+        assert payload["model"] == "sentiment-lora"
+        assert payload["temperature"] == 0.1
+        assert payload["messages"][-1] == {"role": "user", "content": "Bitcoin rally"}
         return {
-            "label": "Bullish",
-            "confidence": 0.91,
-            "scores": {"bullish": 0.91, "bearish": 0.03, "neutral": 0.06},
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"label":"bullish","confidence":0.91,"scores":{"bullish":0.91,"bearish":0.03}}'
+                    }
+                }
+            ]
         }
 
     monkeypatch.setattr(api, "_post_remote", fake_post)
     result = api.predict_sentiment("Bitcoin rally")
     assert result.label == "Bullish"
     assert result.confidence == 0.91
+    assert result.scores["neutral"] == 0.0
 
 
 def test_real_mode_uses_remote_generation_endpoint(monkeypatch):
     monkeypatch.setenv("LORA_USE_MOCK", "false")
-    monkeypatch.setenv("LORA_REMOTE_BASE_URL", "https://autodl.example")
+    monkeypatch.setenv("LORA_REMOTE_BASE_URL", "https://autodl.example/v1")
 
     def fake_post(path, payload):
-        assert path == "/generate_response"
-        assert payload["prompt"] == "Explain BTC"
-        assert payload["context"] == "ETF flows"
-        return {"text": "BTC looks constructive<|eot_id|>", "model_name": "autodl-lora"}
+        assert path == "/chat/completions"
+        assert payload["model"] == "ift-lora"
+        assert payload["temperature"] == 0.7
+        assert payload["messages"][-1]["content"] == "Context:\nETF flows\n\nQuestion:\nExplain BTC"
+        return {"choices": [{"message": {"content": "BTC looks constructive<|eot_id|>"}}]}
 
     monkeypatch.setattr(api, "_post_remote", fake_post)
     result = api.generate_response("Explain BTC", context="ETF flows")
     assert result.text == "BTC looks constructive"
-    assert result.model_name == "autodl-lora"
+    assert result.model_name == "ift-lora"
+
+
+def test_sentiment_fallback_parses_non_json_text():
+    result = api._sentiment_from_text("This looks bearish after a sharp crash")
+    assert result.label == "Bearish"
+    assert set(result.scores) == {"bullish", "bearish", "neutral"}

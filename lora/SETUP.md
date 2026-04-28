@@ -25,32 +25,40 @@ Default local integration mode:
 LORA_USE_MOCK=true .venv/bin/python -m pytest tests -q
 ```
 
-Real mode requires model assets:
-
-```bash
-LORA_USE_MOCK=false LORA_MODEL_PATH=/path/to/model_or_adapter python -c "from src.inference import predict_sentiment; print(predict_sentiment('Bitcoin ETF approved'))"
-```
-
-If `LORA_USE_MOCK=false` is set without `LORA_MODEL_PATH`, the wrapper raises `RuntimeError`.
-
-## AutoDL Remote Inference
-
-The real LoRA model is deployed outside this repository on an AutoDL server. Local code is prepared to call it later through HTTP:
+Real mode uses the AutoDL vLLM service through an SSH tunnel:
 
 ```bash
 LORA_USE_MOCK=false \
-LORA_REMOTE_BASE_URL=https://your-autodl-host.example \
-LORA_REMOTE_API_KEY=optional-token \
+LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 \
+LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY \
 python -c "from src.inference import predict_sentiment; print(predict_sentiment('Bitcoin ETF approved'))"
 ```
 
-Expected AutoDL endpoints:
+If `LORA_USE_MOCK=false` is set without `LORA_REMOTE_BASE_URL`, the wrapper raises `RuntimeError`.
 
-- `POST /predict_sentiment` with `{"text": "..."}`
-- `POST /batch_predict_sentiment` with `{"texts": ["...", "..."]}`
-- `POST /generate_response` with `{"prompt": "...", "context": "...", "max_tokens": 512}`
+## AutoDL Remote Inference
 
-Expected response shapes match `shared/types.py`: sentiment responses include `label`, `confidence`, and `scores`; generation responses include `text` and optional `model_name`.
+The real LoRA model is deployed outside this repository on an AutoDL server. It exposes an OpenAI-compatible vLLM API through local SSH port forwarding:
+
+```bash
+ssh -CNg -L 6006:127.0.0.1:6006 -p <port> root@<AutoDL-host>
+```
+
+Local base URL:
+
+```bash
+LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1
+```
+
+The API key must be supplied locally through `LORA_REMOTE_API_KEY`; do not commit real keys.
+
+Expected AutoDL models:
+
+- `sentiment-lora` for `predict_sentiment`
+- `ift-lora` for `generate_response`
+- `llama3.1-8b-instruct` as a base fallback
+
+The wrapper calls `POST /chat/completions` and parses the OpenAI-compatible `choices[0].message.content` response.
 
 ## Verification
 
