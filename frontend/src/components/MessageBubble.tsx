@@ -25,27 +25,27 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <div className="mt-3 border-t border-slate-200/70 pt-3 text-xs text-slate-500">
             {message.sentiment ? <p>Sentiment: {message.sentiment}</p> : null}
             {message.sources?.length ? (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {message.sources.map((source, index) =>
-                  source.url ? (
-                    <a
-                      key={`${source.title}-${index}`}
-                      href={source.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 transition hover:bg-slate-200"
-                    >
-                      {source.title}
-                    </a>
-                  ) : (
-                    <span
-                      key={`${source.title}-${index}`}
-                      className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
-                    >
-                      {source.title}
-                    </span>
-                  )
-                )}
+              <div className="mt-2 space-y-2">
+                <p className="font-medium text-slate-600">Sources</p>
+                {message.sources.map((source, index) => (
+                  <div key={`${source.title}-${index}`} className="rounded-xl bg-slate-50 px-3 py-2">
+                    {source.url ? (
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-slate-700 transition hover:text-skyline"
+                      >
+                        {source.title}
+                      </a>
+                    ) : (
+                      <p className="font-medium text-slate-700">{source.title}</p>
+                    )}
+                    {source.snippet ? (
+                      <p className="mt-1 line-clamp-2 text-slate-500">{source.snippet}</p>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             ) : null}
           </div>

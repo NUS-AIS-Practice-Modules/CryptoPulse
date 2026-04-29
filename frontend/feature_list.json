@@ -37,7 +37,7 @@
         "FE-002"
       ],
       "status": "passing",
-      "evidence": "2026-04-27: Updated `src/services/api.ts` to send the documented JSON body to Chatbot and map Chatbot's sentiment object plus source snippets into the frontend message shape. Verified mock-first E2E with `python scripts/verify_mock_first_e2e.py` while Chatbot and Vite dev servers were running; `/api/chat` returned reply, conversation_id, entities, and sources.",
+      "evidence": "2026-04-27: Updated `src/services/api.ts` to send the documented JSON body to Chatbot and map Chatbot's sentiment object plus source snippets into the frontend message shape. Verified mock-first E2E with `python scripts/verify_mock_first_e2e.py` while Chatbot and Vite dev servers were running; `/api/chat` returned reply, conversation_id, entities, and sources. 2026-04-29: Browser walkthrough against the full no-mock backend passed. Sending `Use recent crypto reports to explain the Bitcoin market outlook.` from the Chat page produced a real reply, `Sentiment: Neutral`, a non-empty conversation id, and visible `Sources` with titles and snippets.",
       "verification": [
         "点击发送调用 API",
         "返回 reply 正常显示",
@@ -67,7 +67,7 @@
         "FE-003"
       ],
       "status": "passing",
-      "evidence": "2026-04-27: Updated Dashboard API adapter to call `/api/sentiment/summary?crypto=BTC&period=<range>` and map Chatbot's `{crypto, period, overall_sentiment, trend, top_topics, data_points_analyzed}` response into the UI's `DashboardSummary` shape. Verified by `npm run build` and mock-first E2E; `/api/sentiment/summary?crypto=BTC&period=7d` returned HTTP 200 with seven trend points.",
+      "evidence": "2026-04-27: Updated Dashboard API adapter to call `/api/sentiment/summary?crypto=BTC&period=<range>` and map Chatbot's `{crypto, period, overall_sentiment, trend, top_topics, data_points_analyzed}` response into the UI's `DashboardSummary` shape. Verified by `npm run build` and mock-first E2E; `/api/sentiment/summary?crypto=BTC&period=7d` returned HTTP 200 with seven trend points. 2026-04-29: Browser walkthrough against the full no-mock backend passed. Dashboard loaded without errors or undefined text, showed sentiment charts, and the `90 Days` filter refreshed the page to `当前时间筛选器为 90d` with real API data.",
       "verification": [
         "页面可访问",
         "图表展示趋势数据",
@@ -82,7 +82,7 @@
         "FE-003"
       ],
       "status": "passing",
-      "evidence": "2026-04-27: Updated health adapter to map Chatbot's `modules` health response into frontend `HealthStatus` and avoid undefined UI text. Verified by `npm run build` and mock-first E2E; `/api/health` returned HTTP 200 with lora, rag, and ner module statuses.",
+      "evidence": "2026-04-27: Updated health adapter to map Chatbot's `modules` health response into frontend `HealthStatus` and avoid undefined UI text. Verified by `npm run build` and mock-first E2E; `/api/health` returned HTTP 200 with lora, rag, and ner module statuses. 2026-04-29: Browser walkthrough showed `API Status` as `ok · lora: ok, rag: ok, ner: ok` while connected to the full no-mock Chatbot service.",
       "verification": [
         "GET /api/health 可调用",
         "网络错误有提示信息",

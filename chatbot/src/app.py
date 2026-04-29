@@ -8,6 +8,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+rag_system_site_packages = os.getenv("RAG_SYSTEM_SITE_PACKAGES")
+if rag_system_site_packages and rag_system_site_packages not in sys.path:
+    sys.path.append(rag_system_site_packages)
 
 from src.config import settings
 from src.services.sentiment_cache import sentiment_cache

@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-04-28 21:20
-**Active Feature:** Full no-mock provider integration in progress
+**Last Updated:** 2026-04-29 20:20
+**Active Feature:** Demo-ready final handoff
 
 ## Status
 
@@ -32,6 +32,9 @@
 - [x] AutoDL LoRA OpenAI-compatible vLLM integration implemented and verified through the local SSH tunnel
 - [x] Chatbot `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora` isolated path verified with AutoDL LoRA and mock RAG
 - [x] Full no-mock preparation added: RAG imports are package-compatible inside the Chatbot process, `/api/health` probes the configured Milvus collection, `scripts/verify_full_no_mock_e2e.py` exists, and the root `README.md` now documents Milvus, AutoDL tunnel, Chatbot, Frontend, and recording flow
+- [x] Full no-mock E2E passed with one Chatbot process using real RAG and real AutoDL LoRA. `python scripts/verify_full_no_mock_e2e.py` returned `full no-mock e2e ok`, RAG health reported `documents_indexed=1961` for `cryptopulse_rag_hybrid_bge_m3_bm25`, `/api/chat` returned sentiment label `Neutral`, and 5 real RAG sources.
+- [x] Frontend browser walkthrough passed against the full no-mock backend. Dashboard showed `ok · lora: ok, rag: ok, ner: ok`, the `90 Days` range refreshed real data, and Chat displayed a real answer with `Sentiment: Neutral`, non-empty conversation id, `Sources`, source titles, and snippets.
+- [x] Added `docs/DEMO_CHECKLIST.md` with startup order, recording script, expected evidence, non-blocking gaps, and troubleshooting.
 
 ### What's In Progress
 
@@ -41,16 +44,16 @@
 - [ ] Finish RAG-006 refresh/evaluation work
   - Details: benchmark CLI, grounded-answer Faithfulness proxy, and refresh dry-run CLI are implemented; native hybrid + CrossEncoder benchmark passes against local Milvus
   - Blockers: social refresh still depends on the temporarily skipped social_media source; real generation Faithfulness depends on Chatbot integration
-- [ ] Finish no-mock full-system demo flow
-  - Details: Frontend -> Chatbot REST works in mock-first mode; Chatbot -> AutoDL LoRA works with mock RAG; Chatbot can import real RAG provider code after package import fixes
-  - Blockers: current local AutoDL tunnel endpoint `127.0.0.1:6006` was not reachable during the latest verification attempt; direct RAG smoke also remained running in cold-start/provider probe and could not be killed by Codex because escalation quota was unavailable
+- [x] Finish frontend browser walkthrough and demo recording readiness
+  - Details: API-level full no-mock E2E passes, Frontend dev shell is reachable, and browser walkthrough validates Dashboard plus Chat for recording
+  - Blockers: none known for the demo path; social_media corpus coverage remains intentionally skipped
 
 ### What's Next
 
 1. Decide refresh behavior for news with current PDF/web corpus
 2. Replace the local Faithfulness proxy with generation-based Faithfulness after Chatbot integration is available
 3. Add a documented/importable social_media source when available
-4. Reopen or repair the AutoDL tunnel, then run Chatbot full no-mock with real RAG and AutoDL LoRA using the README command
+4. Record the final video using `docs/DEMO_CHECKLIST.md`
 
 ## Blockers / Risks
 
@@ -59,7 +62,8 @@
 - [ ] Real corpus collection still needs a social_media source decision
 - [ ] RAG-006 social refresh remains blocked by the intentionally skipped social_media source
 - [ ] RAG-006 currently uses a local lexical Faithfulness proxy, not a generation-based evaluator
-- [ ] Mock-first E2E is verified, but full no-mock E2E is not yet passing by design
+- [x] Mock-first E2E is verified, and full no-mock E2E is now verified at API/script level
+- [x] Browser-level frontend walkthrough is verified against the full no-mock backend
 - [ ] AutoDL API key must stay local-only and must not be committed
 - [ ] Current environment blocked `chatbot/.venv/bin/pip install -r rag/requirements.txt` through sandbox network restrictions; documented fallback is to export `PYTHONPATH` to the existing `rag/.venv` site-packages
 
@@ -120,9 +124,11 @@
 - [x] 2026-04-28: Chatbot isolated real-LoRA verification passed with `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false`; `/api/chat` returned AutoDL LoRA reply, Bullish sentiment, BTC entity via fallback NER, and mock RAG sources.
 - [x] 2026-04-28: Regression checks passed after the LoRA/Chatbot integration changes: `cd lora && .venv/bin/python -m pytest tests -q` (7 passed) and `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (18 passed).
 - [x] 2026-04-28: Full no-mock implementation prep added `scripts/verify_full_no_mock_e2e.py`, package-compatible RAG imports for Chatbot, and Milvus collection probing in Chatbot health. `chatbot/.venv/bin/python -c "from rag.src.retrieval import retrieve, get_context_for_llm; ..."` and `cd rag && .venv/bin/python -c "from src.retrieval import retrieve, get_context_for_llm; ..."` both imported successfully after the RAG import fix.
-- [x] 2026-04-28: Regression after full no-mock prep passed: `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (19 passed), `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), `cd frontend && npm run build` passed with the existing Vite chunk-size warning, `cd rag && .venv/bin/python -m unittest discover -s tests` (19 tests OK), `./init.sh` passed, JSON tracker validation passed, `git diff --check` passed, and `rg -n "sk-crypto" --glob '!lora/autodl_lora.md'` returned no tracked-file matches.
-- [ ] 2026-04-28: Full no-mock E2E is still blocked in this environment because `curl http://127.0.0.1:6006/v1/models` returns connection refused; `scripts/verify_full_no_mock_e2e.py` should be run after the AutoDL tunnel is reachable again.
+- [x] 2026-04-28: Regression after full no-mock prep passed: `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` (19 passed), `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), `cd frontend && npm run build` passed with the existing Vite chunk-size warning, `cd rag && .venv/bin/python -m unittest discover -s tests` (19 tests OK), `./init.sh` passed, JSON tracker validation passed, `git diff --check` passed, and secret-pattern search returned no tracked-file matches.
+- [x] 2026-04-29: Full no-mock E2E passed after AutoDL vLLM was restored. Chatbot was started with `USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false`, RAG dependency paths were bridged through `PYTHONPATH` plus `RAG_SYSTEM_SITE_PACKAGES`, Frontend was started with `VITE_USE_MOCK=false`, and `python scripts/verify_full_no_mock_e2e.py` returned `full no-mock e2e ok`.
+- [x] 2026-04-29: Frontend browser walkthrough passed. Dashboard loaded without undefined/error text, showed `ok · lora: ok, rag: ok, ner: ok`, and `90 Days` changed the selected range. Chat sent `Use recent crypto reports to explain the Bitcoin market outlook.` and displayed a real answer, `Sentiment: Neutral`, `Sources`, source titles, and source snippets.
+- [x] 2026-04-29 final verification: `python scripts/verify_full_no_mock_e2e.py` passed before the final documentation-only edits, returning `full no-mock e2e ok` with RAG collection `cryptopulse_rag_hybrid_bge_m3_bm25`, `rag_documents_indexed=1961`, sentiment `Neutral`, and `source_count=5`. Fresh regression after the final UI/docs updates passed: Chatbot `19 passed`, Frontend `npm run build` passed with the known Vite chunk-size warning, RAG `19 tests OK`, LoRA `7 passed`, `./init.sh` passed, all feature trackers parsed as JSON, `git diff --check` passed, and secret-pattern search returned no tracked-file matches.
 
 ## Notes for Next Session
 
-Continue with real provider integration. The next practical target is Chatbot `USE_MOCK=false` with real RAG plus verified AutoDL LoRA, then generation-based Faithfulness and full no-mock E2E. RAG-001 social_media remains a documented temporary skip per user instruction.
+The project is demo-ready for the agreed scope. The next practical action is recording the final video with `docs/DEMO_CHECKLIST.md`. Non-blocking future work remains: add a real `social_media` corpus, implement RAG social refresh, preserve LoRA training/run evidence if required by the course report, and replace the local Faithfulness proxy with generation-based evaluation.

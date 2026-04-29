@@ -24,6 +24,8 @@
 - Chatbot isolated real-LoRA path passes with `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false`
 - Chatbot can import real RAG retrieval symbols from `rag.src.retrieval` after RAG package import fixes
 - Chatbot `/api/health` now probes the configured Milvus collection and reports unavailable details instead of a fixed RAG document count
+- Full no-mock E2E passes with one Chatbot process using real RAG and real AutoDL LoRA; latest script output was `full no-mock e2e ok`
+- Frontend browser walkthrough passes against the full no-mock backend for Dashboard and Chat
 
 ## Changed This Session
 
@@ -63,6 +65,9 @@
 - Added `scripts/verify_full_no_mock_e2e.py` for full real-provider verification
 - Rewrote the root `README.md` with setup, Milvus, AutoDL tunnel, full no-mock startup, recording, verification, and troubleshooting instructions
 - Updated `chatbot/SETUP.md` and `.env.example` with full no-mock RAG/LoRA environment variables
+- Added `RAG_SYSTEM_SITE_PACKAGES` support so Chatbot can append the local system site-packages path after startup without shadowing Python stdlib modules
+- Added `docs/DEMO_CHECKLIST.md` and updated the Frontend chat bubble to show `Sources` plus source snippets for recording
+- Updated root and frontend trackers so milestone-006 and milestone-007 are passing after browser walkthrough evidence
 
 ## Broken Or Unverified
 
@@ -70,19 +75,19 @@
 - RAG-001 real six-source corpus collection is not finished because social_media is still missing
 - RAG-006 Faithfulness is currently a local lexical proxy; generation-based Faithfulness still needs Chatbot integration
 - RAG-006 social refresh is not implemented because social_media is intentionally skipped
-- Full no-mock E2E is not verified because Chatbot still needs a same-run real RAG plus real AutoDL LoRA path
+- Full no-mock API/script E2E is verified; browser-level walkthrough is verified; the remaining action is recording the video using the checklist
 - The AutoDL API key must remain local-only; do not write it into tracked files
-- Latest attempt found `127.0.0.1:6006` unavailable even though an SSH tunnel process existed; the remote vLLM side likely needs to be restarted or the tunnel reopened
+- AutoDL tunnel was restored on 2026-04-29 and verified through `/v1/models`
 - Installing `rag/requirements.txt` into `chatbot/.venv` was blocked by sandbox network restrictions; current README documents a no-download fallback using the existing `rag/.venv` site-packages on `PYTHONPATH`
 - A direct real RAG smoke process remained running during the latest attempt and Codex could not kill it because escalation quota was unavailable; check process `82305` if it is still present before retrying heavy RAG smoke
 
 ## Next Best Step
 
-- Highest-priority unfinished feature: Chatbot `USE_MOCK=false` with real RAG and verified AutoDL LoRA in the same run
-- Why it is next: mock-first REST E2E passes, RAG is real-provider ready at module level, and AutoDL LoRA is now verified
-- What counts as passing: Chatbot starts with `USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false`, `/api/chat` returns reply, sentiment, entities, and real RAG sources, and full frontend-to-backend E2E passes without module mocks
+- Highest-priority unfinished feature: final video recording by the user
+- Why it is next: code, docs, API E2E, and browser walkthrough are all verified
+- What counts as passing: recording follows `docs/DEMO_CHECKLIST.md` and shows Dashboard health, range switching, Chat reply, sentiment, and RAG sources
 - What must not change during that step: shared contracts unless the change is coordinated via `docs/INTERFACES.md`
- - Immediate prerequisite: make `curl http://127.0.0.1:6006/v1/models -H "Authorization: Bearer $LORA_REMOTE_API_KEY"` return the AutoDL model list again
+- Immediate prerequisite: keep Milvus, AutoDL tunnel, Chatbot, and Frontend running during recording
 
 ## Commands
 
@@ -113,5 +118,5 @@
 - Mock-first E2E verification: `python scripts/verify_mock_first_e2e.py`
 - AutoDL LoRA local wrapper check: `cd lora && LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY .venv/bin/python -c "from src.inference import predict_sentiment; print(predict_sentiment('Bitcoin ETF approved'))"`
 - Chatbot isolated real-LoRA check: `cd chatbot && USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
-- Chatbot full no-mock check: `cd chatbot && export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages && export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH" && USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=false MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base BM25_INDEX_PATH=../rag/data/processed/bm25_index.json HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
+- Chatbot full no-mock check: `cd chatbot && export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages && export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH" && USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=false MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base BM25_INDEX_PATH=../rag/data/processed/bm25_index.json HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
 - Full no-mock E2E verification: `python scripts/verify_full_no_mock_e2e.py`

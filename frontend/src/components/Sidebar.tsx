@@ -44,7 +44,7 @@ export function Sidebar({ activeView, onChangeView }: SidebarProps) {
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
         <p className="font-medium text-white">模式切换</p>
-        <p className="mt-1">默认支持 mock 数据，后端就绪后只需调整 `.env.local`。</p>
+        <p className="mt-1">录屏模式使用真实后端；需要离线演示时可在 `.env.local` 切换 mock。</p>
       </div>
     </aside>
   );

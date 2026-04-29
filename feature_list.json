@@ -70,9 +70,9 @@
       "title": "Chatbot integrated with real providers",
       "description": "Chatbot disables mocks and completes end-to-end pipeline execution using real LoRA and RAG interfaces.",
       "owner": "Chatbot Owner",
-      "status": "in_progress",
+      "status": "passing",
       "target_date": "2026-05-04",
-      "evidence": "2026-04-27: Chatbot mock-first API is verified with module tests and E2E HTTP checks. 2026-04-28: Chatbot `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false` was verified against AutoDL LoRA and returned reply, sentiment, entity, and mock RAG sources. 2026-04-28 full no-mock preparation added package-compatible RAG imports, real Milvus collection probing in `/api/health`, full provider startup documentation, and `scripts/verify_full_no_mock_e2e.py`. Full real-provider mode is not marked complete until the same Chatbot run passes with `RAG_USE_MOCK=false` and reachable AutoDL LoRA.",
+      "evidence": "2026-04-27: Chatbot mock-first API is verified with module tests and E2E HTTP checks. 2026-04-28: Chatbot `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false` was verified against AutoDL LoRA and returned reply, sentiment, entity, and mock RAG sources. 2026-04-28 full no-mock preparation added package-compatible RAG imports, real Milvus collection probing in `/api/health`, full provider startup documentation, and `scripts/verify_full_no_mock_e2e.py`. 2026-04-29: Full real-provider Chatbot mode passed with `USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false`; `python scripts/verify_full_no_mock_e2e.py` returned `full no-mock e2e ok`, RAG reported `documents_indexed=1961` in collection `cryptopulse_rag_hybrid_bge_m3_bm25`, and `/api/chat` returned LoRA sentiment/reply plus 5 real RAG sources.",
       "gate": [
         "USE_MOCK=false path verified",
         "/api/chat returns reply, sentiment, entities, and sources",
@@ -84,9 +84,9 @@
       "title": "Frontend end-to-end integration",
       "description": "Frontend runs against the real Chatbot API and covers the main chat flow and dashboard summary flow.",
       "owner": "Frontend Owner",
-      "status": "in_progress",
+      "status": "passing",
       "target_date": "2026-05-07",
-      "evidence": "2026-04-27: Frontend build passes and can run against the local Chatbot API with `VITE_USE_MOCK=false`. Mock-first E2E verified `Frontend -> Chatbot REST` reachability through `python scripts/verify_mock_first_e2e.py`, but the backend was still in `USE_MOCK=true`, so this is not yet full real-provider integration.",
+      "evidence": "2026-04-27: Frontend build passes and can run against the local Chatbot API with `VITE_USE_MOCK=false`. Mock-first E2E verified `Frontend -> Chatbot REST` reachability through `python scripts/verify_mock_first_e2e.py`, but the backend was still in `USE_MOCK=true`. 2026-04-29: Full no-mock E2E script confirmed the Frontend dev shell was reachable at `http://127.0.0.1:5173` while Chatbot was running real RAG plus real AutoDL LoRA. Browser walkthrough passed: Dashboard showed `ok · lora: ok, rag: ok, ner: ok`, the `90 Days` filter refreshed real summary data, and Chat showed a real answer with sentiment and RAG source snippets.",
       "gate": [
         "Frontend chat UI sends requests to the real API",
         "Sentiment summary page consumes backend data",
@@ -98,9 +98,9 @@
       "title": "Demo-ready full-system flow",
       "description": "Full system works without mocks and is ready for evaluation and presentation.",
       "owner": "integrator",
-      "status": "in_progress",
+      "status": "passing",
       "target_date": "2026-05-10",
-      "evidence": "2026-04-27: A reproducible mock-first E2E verification script was added and passed while Chatbot and Frontend dev servers were running. 2026-04-28: real AutoDL LoRA plus mock RAG Chatbot API path passed. Full no-mock demo readiness remains blocked by enabling real RAG in Chatbot and RAG social_media coverage.",
+      "evidence": "2026-04-27: A reproducible mock-first E2E verification script was added and passed while Chatbot and Frontend dev servers were running. 2026-04-28: real AutoDL LoRA plus mock RAG Chatbot API path passed. 2026-04-29: full no-mock API path passed with Frontend shell reachability, real RAG, and real AutoDL LoRA. 2026-04-29 browser walkthrough passed for Dashboard and Chat against the full no-mock backend, and `docs/DEMO_CHECKLIST.md` now documents the recording flow, expected evidence, and non-blocking gaps. The system is demo-ready for recording; social_media corpus coverage remains a documented non-blocking gap.",
       "gate": [
         "Full chat flow works without mocks",
         "Retrieval and sentiment outputs are visible in the system",
@@ -108,7 +108,7 @@
       ]
     }
   ],
-  "current_milestone": "milestone-005",
-  "last_updated": "2026-04-28",
+  "current_milestone": "milestone-007",
+  "last_updated": "2026-04-29",
   "updated_by": "Codex integrator"
 }

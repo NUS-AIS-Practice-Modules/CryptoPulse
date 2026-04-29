@@ -68,7 +68,7 @@ Reason:
 ## 2026-04-28 - Full No-Mock Local Dependency Boundary
 
 - Preferred full no-mock Chatbot setup installs `rag/requirements.txt` into `chatbot/.venv`
-- If local network policy blocks that install, the documented local fallback is to add the existing `rag/.venv/lib/python3.11/site-packages` to `PYTHONPATH` only when starting Chatbot
+- If local network policy blocks that install, the documented local fallback is to add the existing `rag/.venv/lib/python3.11/site-packages` to `PYTHONPATH` only when starting Chatbot, and set `RAG_SYSTEM_SITE_PACKAGES` so Chatbot appends the local system site-packages path after startup
 - Keep conda `base` untouched
 - Keep RAG and LoRA public interfaces unchanged
 

@@ -31,6 +31,7 @@ RAG venv's site-packages on `PYTHONPATH`:
 ```bash
 export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages
 export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH"
+export RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages
 ```
 
 ## Environment Variables
@@ -83,6 +84,7 @@ USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false \
   RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base \
   BM25_INDEX_PATH=../rag/data/processed/bm25_index.json \
   HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+  RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages \
   .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000
 ```
 

@@ -69,6 +69,7 @@ If local network policy blocks that install, use the already-created `rag/.venv`
 ```bash
 export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages
 export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH"
+export RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages
 ```
 
 ## Milvus
@@ -132,6 +133,7 @@ RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-rer
 BM25_INDEX_PATH=../rag/data/processed/bm25_index.json \
 HF_HUB_OFFLINE=1 \
 TRANSFORMERS_OFFLINE=1 \
+RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages \
 .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000
 ```
 
@@ -153,13 +155,17 @@ python scripts/verify_full_no_mock_e2e.py
 
 ## Recording Checklist
 
-Use `http://127.0.0.1:5173` for the video.
+Use `http://127.0.0.1:5173` for the video. The full checklist is in `docs/DEMO_CHECKLIST.md`.
 
 1. Open the Dashboard and confirm health shows API/RAG/LoRA availability.
 2. Open the Chat page.
 3. Ask a query such as: `Use recent crypto reports to explain the Bitcoin market outlook.`
 4. Show the answer, sentiment label, entities, and source snippets.
 5. Return to Dashboard and show sentiment summary data.
+
+Non-blocking demo gaps are documented in the checklist: social media ingestion,
+RAG social refresh, local LoRA training evidence, and generation-based
+Faithfulness are future work and are not required for the current recording.
 
 ## Verification Commands
 

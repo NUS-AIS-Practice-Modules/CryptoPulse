@@ -101,7 +101,7 @@ export function DashboardPage() {
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Last Updated</p>
               <p className="mt-4 font-display text-3xl font-semibold text-ink">{summary.lastUpdated}</p>
               <p className="mt-3 text-slate-600">
-                当前时间筛选器为 {selectedRange}。文档要求的筛选切换交互已预留，后端补齐后可进一步根据时间区间拉取真实数据。
+                当前时间筛选器为 {selectedRange}。Dashboard 正在调用真实 Chatbot API，并会按所选区间刷新情绪趋势数据。
               </p>
             </div>
           </section>
