@@ -24,7 +24,9 @@ export const mockDashboardSummary: DashboardSummary = {
 
 export const mockHealthStatus: HealthStatus = {
   status: "ok",
-  message: "All systems operational."
+  message: "Frontend mock data enabled.",
+  frontendMode: "mock",
+  apiBaseUrl: "mock"
 };
 
 export function buildMockReply(message: string, conversationId?: string): ChatReply {

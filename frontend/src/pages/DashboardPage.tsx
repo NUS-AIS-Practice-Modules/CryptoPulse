@@ -76,7 +76,7 @@ export function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard title="Total Analyses" value={String(summary.totalAnalyses)} />
             <StatCard title="Active Topics" value={String(summary.activeTopics)} />
-            <StatCard title="System Health" value={summary.health} />
+            <StatCard title="Frontend Mode" value={health.frontendMode} />
             <StatCard title="API Status" value={`${health.status} · ${health.message}`} />
           </div>
 

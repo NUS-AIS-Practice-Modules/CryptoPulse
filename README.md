@@ -146,6 +146,10 @@ VITE_API_BASE_URL=http://127.0.0.1:8000 \
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
+The Settings page reads the environment injected into the current Vite process.
+If `VITE_USE_MOCK` or `VITE_API_BASE_URL` changes, stop and restart
+`npm run dev`; a browser refresh alone will keep the old dev-server env.
+
 Terminal 3, verification:
 
 ```bash

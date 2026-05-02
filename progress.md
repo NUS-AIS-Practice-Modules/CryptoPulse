@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-04-29 20:20
-**Active Feature:** Demo-ready final handoff
+**Last Updated:** 2026-05-02
+**Active Feature:** Real/mock environment status consistency
 
 ## Status
 
@@ -35,6 +35,7 @@
 - [x] Full no-mock E2E passed with one Chatbot process using real RAG and real AutoDL LoRA. `python scripts/verify_full_no_mock_e2e.py` returned `full no-mock e2e ok`, RAG health reported `documents_indexed=1961` for `cryptopulse_rag_hybrid_bge_m3_bm25`, `/api/chat` returned sentiment label `Neutral`, and 5 real RAG sources.
 - [x] Frontend browser walkthrough passed against the full no-mock backend. Dashboard showed `ok · lora: ok, rag: ok, ner: ok`, the `90 Days` range refreshed real data, and Chat displayed a real answer with `Sentiment: Neutral`, non-empty conversation id, `Sources`, source titles, and snippets.
 - [x] Added `docs/DEMO_CHECKLIST.md` with startup order, recording script, expected evidence, non-blocking gaps, and troubleshooting.
+- [x] Fixed real/mock status consistency. Frontend Settings now reads current Vite runtime env, Dashboard shows `Frontend Mode`, and Chatbot health now probes AutoDL vLLM `/models` before reporting real LoRA as ok.
 
 ### What's In Progress
 
@@ -64,6 +65,7 @@
 - [ ] RAG-006 currently uses a local lexical Faithfulness proxy, not a generation-based evaluator
 - [x] Mock-first E2E is verified, and full no-mock E2E is now verified at API/script level
 - [x] Browser-level frontend walkthrough is verified against the full no-mock backend
+- [x] AutoDL LoRA health no longer reports ok from configuration alone; unavailable tunnel/key/model states degrade `/api/health`
 - [ ] AutoDL API key must stay local-only and must not be committed
 - [ ] Current environment blocked `chatbot/.venv/bin/pip install -r rag/requirements.txt` through sandbox network restrictions; documented fallback is to export `PYTHONPATH` to the existing `rag/.venv` site-packages
 
@@ -128,6 +130,7 @@
 - [x] 2026-04-29: Full no-mock E2E passed after AutoDL vLLM was restored. Chatbot was started with `USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false`, RAG dependency paths were bridged through `PYTHONPATH` plus `RAG_SYSTEM_SITE_PACKAGES`, Frontend was started with `VITE_USE_MOCK=false`, and `python scripts/verify_full_no_mock_e2e.py` returned `full no-mock e2e ok`.
 - [x] 2026-04-29: Frontend browser walkthrough passed. Dashboard loaded without undefined/error text, showed `ok · lora: ok, rag: ok, ner: ok`, and `90 Days` changed the selected range. Chat sent `Use recent crypto reports to explain the Bitcoin market outlook.` and displayed a real answer, `Sentiment: Neutral`, `Sources`, source titles, and source snippets.
 - [x] 2026-04-29 final verification: `python scripts/verify_full_no_mock_e2e.py` passed before the final documentation-only edits, returning `full no-mock e2e ok` with RAG collection `cryptopulse_rag_hybrid_bge_m3_bm25`, `rag_documents_indexed=1961`, sentiment `Neutral`, and `source_count=5`. Fresh regression after the final UI/docs updates passed: Chatbot `19 passed`, Frontend `npm run build` passed with the known Vite chunk-size warning, RAG `19 tests OK`, LoRA `7 passed`, `./init.sh` passed, all feature trackers parsed as JSON, `git diff --check` passed, and secret-pattern search returned no tracked-file matches.
+- [x] 2026-05-02: Real/mock environment status consistency fixed and verified. Chatbot health tests passed with `USE_MOCK=true .venv/bin/python -m pytest tests -q` (24 passed). Direct health invocation with `USE_MOCK=false RAG_USE_MOCK=true LORA_USE_MOCK=false` and unavailable local AutoDL access returned top-level `degraded` with `lora.status=unavailable`. Frontend `npm run build` passed, and a temporary Vite run with `VITE_USE_MOCK=false VITE_API_BASE_URL=http://127.0.0.1:8000` served transformed modules containing those exact runtime env values.
 
 ## Notes for Next Session
 

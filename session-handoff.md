@@ -24,8 +24,10 @@
 - Chatbot isolated real-LoRA path passes with `USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false`
 - Chatbot can import real RAG retrieval symbols from `rag.src.retrieval` after RAG package import fixes
 - Chatbot `/api/health` now probes the configured Milvus collection and reports unavailable details instead of a fixed RAG document count
+- Chatbot `/api/health` now probes AutoDL vLLM `/models` before reporting real LoRA as ok; missing tunnel/key/models degrade health instead of showing configuration-based ok
 - Full no-mock E2E passes with one Chatbot process using real RAG and real AutoDL LoRA; latest script output was `full no-mock e2e ok`
 - Frontend browser walkthrough passes against the full no-mock backend for Dashboard and Chat
+- Frontend Settings displays current Vite runtime env, and Dashboard shows `Frontend Mode` so mock and real-api states are distinguishable
 
 ## Changed This Session
 
@@ -68,6 +70,7 @@
 - Added `RAG_SYSTEM_SITE_PACKAGES` support so Chatbot can append the local system site-packages path after startup without shadowing Python stdlib modules
 - Added `docs/DEMO_CHECKLIST.md` and updated the Frontend chat bubble to show `Sources` plus source snippets for recording
 - Updated root and frontend trackers so milestone-006 and milestone-007 are passing after browser walkthrough evidence
+- Fixed real/mock status consistency across Frontend and Chatbot health reporting
 
 ## Broken Or Unverified
 

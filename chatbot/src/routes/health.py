@@ -1,4 +1,7 @@
 import os
+import json
+import urllib.error
+import urllib.request
 
 from fastapi import APIRouter
 from src.config import settings
@@ -13,23 +16,102 @@ async def health():
     ner_status = {"status": "ok", "backend": settings.ner_backend}
 
     if not settings.use_mock:
-        lora_status = {
-            "status": "mock" if settings.lora_use_mock else "ok",
-            "model_loaded": not settings.lora_use_mock,
-        }
+        lora_status = (
+            {"status": "mock", "model_loaded": False}
+            if settings.lora_use_mock
+            else _probe_lora_status()
+        )
         rag_status = (
             {"status": "mock", "documents_indexed": 0}
             if settings.rag_use_mock
             else _probe_rag_status()
         )
 
+    overall_status = _overall_status([lora_status, rag_status, ner_status])
+
     return {
-        "status": "ok",
+        "status": overall_status,
         "modules": {
             "lora": lora_status,
             "rag": rag_status,
             "ner": ner_status,
         },
+    }
+
+
+def _overall_status(modules: list[dict]) -> str:
+    if any(module.get("status") in {"unavailable", "down"} for module in modules):
+        return "degraded"
+    return "ok"
+
+
+def _probe_lora_status() -> dict:
+    base_url = settings.lora_remote_base_url.rstrip("/")
+    required_models = {settings.lora_sentiment_model, settings.lora_chat_model}
+
+    if not base_url:
+        return {
+            "status": "unavailable",
+            "model_loaded": False,
+            "reason": "missing_lora_remote_base_url",
+            "required_models": sorted(required_models),
+        }
+    if not settings.lora_remote_api_key:
+        return {
+            "status": "unavailable",
+            "model_loaded": False,
+            "endpoint": f"{base_url}/models",
+            "reason": "missing_lora_remote_api_key",
+            "required_models": sorted(required_models),
+        }
+
+    request = urllib.request.Request(
+        f"{base_url}/models",
+        headers={"Authorization": f"Bearer {settings.lora_remote_api_key}"},
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=settings.lora_remote_timeout_seconds) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        return {
+            "status": "unavailable",
+            "model_loaded": False,
+            "endpoint": f"{base_url}/models",
+            "reason": f"http_{exc.code}",
+            "required_models": sorted(required_models),
+        }
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        return {
+            "status": "unavailable",
+            "model_loaded": False,
+            "endpoint": f"{base_url}/models",
+            "reason": str(exc),
+            "required_models": sorted(required_models),
+        }
+
+    available_models = {
+        str(item.get("id"))
+        for item in payload.get("data", [])
+        if isinstance(item, dict) and item.get("id")
+    }
+    missing_models = sorted(required_models - available_models)
+    if missing_models:
+        return {
+            "status": "unavailable",
+            "model_loaded": False,
+            "endpoint": f"{base_url}/models",
+            "reason": "required_models_missing",
+            "required_models": sorted(required_models),
+            "available_models": sorted(available_models),
+            "missing_models": missing_models,
+        }
+
+    return {
+        "status": "ok",
+        "model_loaded": True,
+        "endpoint": f"{base_url}/models",
+        "models": sorted(required_models),
     }
 
 

@@ -82,7 +82,7 @@
         "FE-003"
       ],
       "status": "passing",
-      "evidence": "2026-04-27: Updated health adapter to map Chatbot's `modules` health response into frontend `HealthStatus` and avoid undefined UI text. Verified by `npm run build` and mock-first E2E; `/api/health` returned HTTP 200 with lora, rag, and ner module statuses. 2026-04-29: Browser walkthrough showed `API Status` as `ok · lora: ok, rag: ok, ner: ok` while connected to the full no-mock Chatbot service.",
+      "evidence": "2026-04-27: Updated health adapter to map Chatbot's `modules` health response into frontend `HealthStatus` and avoid undefined UI text. Verified by `npm run build` and mock-first E2E; `/api/health` returned HTTP 200 with lora, rag, and ner module statuses. 2026-04-29: Browser walkthrough showed `API Status` as `ok · lora: ok, rag: ok, ner: ok` while connected to the full no-mock Chatbot service. 2026-05-02: Settings now displays the current Vite runtime env instead of hard-coded mock values, and Dashboard shows `Frontend Mode` so mock and real-api states are visible. Mock mode reports frontend mock health instead of real provider module ok text. Verified by `cd frontend && npm run build`; a temporary Vite run with `VITE_USE_MOCK=false VITE_API_BASE_URL=http://127.0.0.1:8000` served transformed modules containing `VITE_USE_MOCK: \"false\"` and `VITE_API_BASE_URL: \"http://127.0.0.1:8000\"`.",
       "verification": [
         "GET /api/health 可调用",
         "网络错误有提示信息",

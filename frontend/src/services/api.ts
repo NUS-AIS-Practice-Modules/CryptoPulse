@@ -3,6 +3,11 @@ import type { ChatReply, DashboardSummary, HealthStatus } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== "false";
+export const runtimeConfig = {
+  apiBaseUrl: API_BASE_URL,
+  useMock: USE_MOCK,
+  frontendMode: USE_MOCK ? "mock" : "real-api"
+} as const;
 
 interface ChatPayload {
   message: string;
@@ -137,6 +142,8 @@ export async function getHealthStatus(): Promise<HealthStatus> {
   return {
     status: response.status,
     message: moduleSummary || "Health endpoint reachable.",
+    frontendMode: runtimeConfig.frontendMode,
+    apiBaseUrl: API_BASE_URL,
     modules
   };
 }

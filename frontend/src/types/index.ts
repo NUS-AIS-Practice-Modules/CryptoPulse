@@ -50,5 +50,7 @@ export interface DashboardSummary {
 export interface HealthStatus {
   status: "ok" | "degraded" | "down";
   message: string;
+  frontendMode: "mock" | "real-api";
+  apiBaseUrl: string;
   modules?: Record<string, unknown>;
 }

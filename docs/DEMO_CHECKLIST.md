@@ -42,6 +42,9 @@ Frontend -> Chatbot REST -> real RAG(Milvus/BGE/BM25) + real AutoDL LoRA(vLLM)
    VITE_USE_MOCK=false VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173
    ```
 
+   The Settings page reflects the env loaded by this Vite process. Restart
+   `npm run dev` after changing `VITE_USE_MOCK` or `VITE_API_BASE_URL`.
+
 6. Run the script check before recording:
 
    ```bash
@@ -60,6 +63,7 @@ Frontend -> Chatbot REST -> real RAG(Milvus/BGE/BM25) + real AutoDL LoRA(vLLM)
 1. Open `http://127.0.0.1:5173`.
 2. Show the Dashboard page.
 3. Point out:
+   - `Frontend Mode: real-api`
    - `API Status: ok`
    - `lora: ok`
    - `rag: ok`
@@ -90,7 +94,8 @@ Frontend -> Chatbot REST -> real RAG(Milvus/BGE/BM25) + real AutoDL LoRA(vLLM)
 ## 4. Troubleshooting
 
 - If Chatbot reports RAG unavailable, check Milvus and `MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25`.
-- If LoRA calls fail, re-check the AutoDL tunnel and `/v1/models`.
+- If Chatbot reports LoRA unavailable, re-check the AutoDL tunnel, `$LORA_REMOTE_API_KEY`, and `/v1/models`; `sentiment-lora` and `ift-lora` must both appear.
 - If the first chat request is slow, send one warm-up message before recording.
 - If Frontend shows old UI after edits, reload the browser tab.
+- If Settings still shows the old mock value after changing env, restart the Vite dev server.
 - Never paste or record the real API key.

@@ -1,3 +1,5 @@
+import { runtimeConfig } from "../services/api";
+
 export function SettingsPage() {
   return (
     <section className="grid gap-5">
@@ -24,9 +26,10 @@ export function SettingsPage() {
         <InfoCard
           title="Environment Variables"
           lines={[
-            "VITE_API_BASE_URL=http://localhost:8000",
-            "VITE_USE_MOCK=true",
-            "后端就绪后将 VITE_USE_MOCK 改为 false"
+            `VITE_API_BASE_URL=${runtimeConfig.apiBaseUrl}`,
+            `VITE_USE_MOCK=${String(runtimeConfig.useMock)}`,
+            `Frontend mode=${runtimeConfig.frontendMode}`,
+            "这些值来自当前 Vite 进程启动时注入的环境变量；修改后需要重启 npm run dev。"
           ]}
         />
         <InfoCard
