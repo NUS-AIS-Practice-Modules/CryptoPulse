@@ -10,10 +10,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-transparent p-4 text-ink md:p-6">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-[1600px] gap-4 lg:grid-cols-[280px_1fr]">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-[1600px] gap-4 lg:h-[calc(100vh-3rem)] lg:min-h-0 lg:grid-cols-[280px_1fr]">
         <Sidebar activeView={activeView} onChangeView={setActiveView} />
 
-        <main className="min-h-[70vh]">
+        <main className="min-h-[70vh] lg:min-h-0">
           {activeView === "chat" ? <ChatPage /> : null}
           {activeView === "dashboard" ? <DashboardPage /> : null}
           {activeView === "settings" ? <SettingsPage /> : null}

@@ -28,7 +28,7 @@ export function DashboardPage() {
         setSummary(summaryData);
         setHealth(healthData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Dashboard 加载失败");
+        setError(err instanceof Error ? err.message : "Dashboard failed to load");
       } finally {
         setLoading(false);
       }
@@ -46,7 +46,7 @@ export function DashboardPage() {
             Sentiment overview and topic radar
           </h1>
           <p className="mt-3 max-w-2xl text-slate-600">
-            展示情绪趋势、Bullish/Bearish/Neutral 分布、Top Topics，以及系统健康状态。
+            Track sentiment trends, Bullish/Bearish/Neutral mix, top topics, and system health.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -68,7 +68,7 @@ export function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-[28px] bg-white/80 p-8 text-slate-500 shadow-panel">加载中...</div>
+        <div className="rounded-[28px] bg-white/80 p-8 text-slate-500 shadow-panel">Loading...</div>
       ) : error ? (
         <div className="rounded-[28px] bg-rose-50 p-8 text-rose-700 shadow-panel">{error}</div>
       ) : summary && health ? (
@@ -101,7 +101,7 @@ export function DashboardPage() {
               <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Last Updated</p>
               <p className="mt-4 font-display text-3xl font-semibold text-ink">{summary.lastUpdated}</p>
               <p className="mt-3 text-slate-600">
-                当前时间筛选器为 {selectedRange}。Dashboard 正在调用真实 Chatbot API，并会按所选区间刷新情绪趋势数据。
+                The active time range is {selectedRange}. The dashboard is calling the real Chatbot API and refreshing sentiment trends for the selected range.
               </p>
             </div>
           </section>

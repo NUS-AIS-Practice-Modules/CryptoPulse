@@ -9,7 +9,7 @@ export function SettingsPage() {
           Environment and integration guide
         </h1>
         <p className="mt-3 max-w-3xl text-slate-600">
-          这里把 `SETUP.md` 里的联调约定直接落成页面说明，方便开发和演示时快速确认当前模式。
+          This page surfaces the current integration settings so the runtime mode is easy to confirm during development and recording.
         </p>
       </div>
 
@@ -20,7 +20,7 @@ export function SettingsPage() {
             "Node.js >= 18",
             "npm.cmd install",
             "npm.cmd run dev",
-            "默认地址: http://localhost:5173"
+            "Default URL: http://localhost:5173"
           ]}
         />
         <InfoCard
@@ -29,7 +29,7 @@ export function SettingsPage() {
             `VITE_API_BASE_URL=${runtimeConfig.apiBaseUrl}`,
             `VITE_USE_MOCK=${String(runtimeConfig.useMock)}`,
             `Frontend mode=${runtimeConfig.frontendMode}`,
-            "这些值来自当前 Vite 进程启动时注入的环境变量；修改后需要重启 npm run dev。"
+            "These values come from the current Vite process. Restart npm run dev after changing environment variables."
           ]}
         />
         <InfoCard
@@ -39,9 +39,9 @@ export function SettingsPage() {
         <InfoCard
           title="Known Limits"
           lines={[
-            "文件上传接口目前仅预留 UI",
-            "历史会话等待后端支持",
-            "流式输出可后续扩展为 SSE / WebSocket"
+            "File upload is currently a reserved UI control",
+            "Conversation history persistence depends on backend support",
+            "Streaming output can be extended with SSE or WebSocket later"
           ]}
         />
       </div>

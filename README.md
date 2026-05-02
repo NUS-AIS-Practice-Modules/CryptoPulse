@@ -102,7 +102,7 @@ ssh -CNg -L 6006:127.0.0.1:6006 -p 49576 root@connect.westb.seetacloud.com
 Set the key only in your local shell or `.env`; never commit it:
 
 ```bash
-export LORA_REMOTE_API_KEY=your-local-key
+export LORA_REMOTE_API_KEY=sk-crypto-2026
 curl http://127.0.0.1:6006/v1/models \
   -H "Authorization: Bearer $LORA_REMOTE_API_KEY"
 ```

@@ -22,7 +22,7 @@ export function ChatBox({ messages, loading }: ChatBoxProps) {
   return (
     <div
       ref={containerRef}
-      className="scrollbar-thin flex min-h-[360px] flex-1 flex-col gap-4 overflow-y-auto rounded-[28px] border border-white/70 bg-white/80 p-4 shadow-panel backdrop-blur"
+      className="scrollbar-thin flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain rounded-[28px] border border-white/70 bg-white/80 p-4 shadow-panel backdrop-blur"
     >
       {messages.map((message) => (
         <MessageBubble key={message.id} message={message} />
@@ -31,7 +31,7 @@ export function ChatBox({ messages, loading }: ChatBoxProps) {
       {loading ? (
         <div className="flex justify-start">
           <div className="rounded-[24px] bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
-            AI 正在分析中...
+            AI is analyzing...
           </div>
         </div>
       ) : null}

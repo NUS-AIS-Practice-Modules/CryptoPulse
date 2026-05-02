@@ -15,10 +15,10 @@ export function FileUpload({ file, onChange }: FileUploadProps) {
         onChange={(event) => onChange(event.target.files?.[0] ?? null)}
       />
       <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-700 shadow-sm">
-        上传文件
+        Upload file
       </span>
       <span className="truncate text-sm text-slate-500">
-        {file ? file.name : "支持 PDF / TXT / DOCX（接口预留）"}
+        {file ? file.name : "Supports PDF / TXT / DOCX (reserved endpoint)"}
       </span>
     </label>
   );

@@ -6,9 +6,9 @@ interface SidebarProps {
 }
 
 const items: Array<{ key: ViewKey; label: string; description: string }> = [
-  { key: "chat", label: "Chat", description: "对话、提问、上传文档" },
-  { key: "dashboard", label: "Dashboard", description: "情绪分析和趋势总览" },
-  { key: "settings", label: "Settings", description: "环境和联调说明" }
+  { key: "chat", label: "Chat", description: "Ask questions and upload documents" },
+  { key: "dashboard", label: "Dashboard", description: "Sentiment analysis and trend overview" },
+  { key: "settings", label: "Settings", description: "Environment and integration status" }
 ];
 
 export function Sidebar({ activeView, onChangeView }: SidebarProps) {
@@ -17,7 +17,7 @@ export function Sidebar({ activeView, onChangeView }: SidebarProps) {
       <div>
         <p className="font-display text-2xl font-bold tracking-tight">CryptoPulse</p>
         <p className="mt-2 text-sm text-slate-300">
-          一个面向加密市场舆情与问答的前端工作台。
+          A research workspace for crypto market sentiment and Q&A.
         </p>
       </div>
 
@@ -43,8 +43,8 @@ export function Sidebar({ activeView, onChangeView }: SidebarProps) {
       </nav>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-        <p className="font-medium text-white">模式切换</p>
-        <p className="mt-1">录屏模式使用真实后端；需要离线演示时可在 `.env.local` 切换 mock。</p>
+        <p className="font-medium text-white">Runtime Mode</p>
+        <p className="mt-1">Recording mode uses the real backend. Switch mock mode in `.env.local` for offline demos.</p>
       </div>
     </aside>
   );
