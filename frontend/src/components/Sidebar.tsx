@@ -6,7 +6,7 @@ interface SidebarProps {
 }
 
 const items: Array<{ key: ViewKey; label: string; description: string }> = [
-  { key: "chat", label: "Chat", description: "Ask questions and upload documents" },
+  { key: "chat", label: "Chat", description: "Ask questions with live research context" },
   { key: "dashboard", label: "Dashboard", description: "Sentiment analysis and trend overview" },
   { key: "settings", label: "Settings", description: "Environment and integration status" }
 ];

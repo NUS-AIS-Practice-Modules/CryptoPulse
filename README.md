@@ -102,7 +102,7 @@ ssh -CNg -L 6006:127.0.0.1:6006 -p 49576 root@connect.westb.seetacloud.com
 Set the key only in your local shell or `.env`; never commit it:
 
 ```bash
-export LORA_REMOTE_API_KEY=sk-crypto-2026
+export LORA_REMOTE_API_KEY=your-local-key
 curl http://127.0.0.1:6006/v1/models \
   -H "Authorization: Bearer $LORA_REMOTE_API_KEY"
 ```
@@ -159,13 +159,22 @@ python scripts/verify_full_no_mock_e2e.py
 
 ## Recording Checklist
 
-Use `http://127.0.0.1:5173` for the video. The full checklist is in `docs/DEMO_CHECKLIST.md`.
+Use `http://127.0.0.1:5173` for the video. The complete 5-7 minute
+English recording script is in `docs/DEMO_CHECKLIST.md`.
 
-1. Open the Dashboard and confirm health shows API/RAG/LoRA availability.
-2. Open the Chat page.
-3. Ask a query such as: `Use recent crypto reports to explain the Bitcoin market outlook.`
-4. Show the answer, sentiment label, entities, and source snippets.
-5. Return to Dashboard and show sentiment summary data.
+Recommended recording flow:
+
+1. Start on Settings and show `VITE_USE_MOCK=false`, `Frontend mode=real-api`,
+   and the Chatbot API base URL.
+2. Open Dashboard and show provider health, sentiment charts, top topics, and
+   time-range switching.
+3. Open Chat, start a new conversation, ask an English market-outlook question,
+   and show the generated answer, sentiment label, source titles, snippets, and
+   conversation ID.
+4. Ask a second follow-up question to demonstrate multi-turn context.
+5. Refresh the browser to show local conversation persistence, then use
+   `New conversation` to reset the visible history.
+6. Return to Dashboard for the final full-system state.
 
 Non-blocking demo gaps are documented in the checklist: social media ingestion,
 RAG social refresh, local LoRA training evidence, and generation-based

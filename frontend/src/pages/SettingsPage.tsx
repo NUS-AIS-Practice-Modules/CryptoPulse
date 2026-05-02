@@ -39,7 +39,6 @@ export function SettingsPage() {
         <InfoCard
           title="Known Limits"
           lines={[
-            "File upload is currently a reserved UI control",
             "Conversation history persistence depends on backend support",
             "Streaming output can be extended with SSE or WebSocket later"
           ]}

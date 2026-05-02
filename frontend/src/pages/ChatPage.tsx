@@ -1,8 +1,12 @@
 import { FormEvent, useState } from "react";
 import { ChatBox } from "../components/ChatBox";
-import { FileUpload } from "../components/FileUpload";
 import { sendChatMessage } from "../services/api";
 import type { ChatMessage } from "../types";
+
+const STORAGE_KEYS = {
+  conversationId: "cryptopulse.chat.conversation_id",
+  messages: "cryptopulse.chat.messages"
+} as const;
 
 function createMessage(
   role: ChatMessage["role"],
@@ -21,15 +25,41 @@ function createMessage(
 const initialMessages: ChatMessage[] = [
   createMessage(
     "assistant",
-    "Welcome to CryptoPulse. Ask about market sentiment, upload documents, or open the Dashboard for the broader trend view."
+    "Welcome to CryptoPulse. Ask about market sentiment or open the Dashboard for the broader trend view."
   )
 ];
 
+function loadStoredMessages(): ChatMessage[] {
+  try {
+    const storedMessages = window.localStorage.getItem(STORAGE_KEYS.messages);
+    if (!storedMessages) {
+      return initialMessages;
+    }
+
+    const parsed = JSON.parse(storedMessages);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : initialMessages;
+  } catch {
+    return initialMessages;
+  }
+}
+
+function loadStoredConversationId(): string | undefined {
+  return window.localStorage.getItem(STORAGE_KEYS.conversationId) || undefined;
+}
+
+function persistConversation(nextMessages: ChatMessage[], nextConversationId?: string) {
+  window.localStorage.setItem(STORAGE_KEYS.messages, JSON.stringify(nextMessages));
+  if (nextConversationId) {
+    window.localStorage.setItem(STORAGE_KEYS.conversationId, nextConversationId);
+  } else {
+    window.localStorage.removeItem(STORAGE_KEYS.conversationId);
+  }
+}
+
 export function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadStoredMessages);
   const [input, setInput] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [conversationId, setConversationId] = useState<string>();
+  const [conversationId, setConversationId] = useState<string | undefined>(loadStoredConversationId);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -40,32 +70,41 @@ export function ChatPage() {
     }
 
     const userMessage = createMessage("user", message);
-    setMessages((current) => [...current, userMessage]);
+    const pendingMessages = [...messages, userMessage];
+    setMessages(pendingMessages);
+    persistConversation(pendingMessages, conversationId);
     setInput("");
     setLoading(true);
 
     try {
       const reply = await sendChatMessage({
         message,
-        conversation_id: conversationId,
-        file: selectedFile
+        conversation_id: conversationId
       });
 
+      const assistantMessage = createMessage("assistant", reply.reply, {
+        sentiment: reply.sentiment,
+        sources: reply.sources
+      });
+      const nextMessages = [...pendingMessages, assistantMessage];
       setConversationId(reply.conversation_id);
-      setMessages((current) => [
-        ...current,
-        createMessage("assistant", reply.reply, {
-          sentiment: reply.sentiment,
-          sources: reply.sources
-        })
-      ]);
+      setMessages(nextMessages);
+      persistConversation(nextMessages, reply.conversation_id);
     } catch (error) {
       const messageText =
         error instanceof Error ? error.message : "Request failed. Check the backend service or switch to mock mode.";
-      setMessages((current) => [...current, createMessage("system", messageText)]);
+      const nextMessages = [...pendingMessages, createMessage("system", messageText)];
+      setMessages(nextMessages);
+      persistConversation(nextMessages, conversationId);
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleNewConversation() {
+    setMessages(initialMessages);
+    setConversationId(undefined);
+    persistConversation(initialMessages);
   }
 
   return (
@@ -78,11 +117,21 @@ export function ChatPage() {
               Crypto chat with live sentiment context
             </h1>
             <p className="mt-3 max-w-2xl text-slate-600">
-              The main chat flow supports multi-turn context, loading states, error handling, and a reserved file-upload control.
+              The main chat flow supports multi-turn context, loading states, and error handling.
             </p>
           </div>
-          <div className="rounded-2xl bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm">
-            Conversation ID: {conversationId ?? "Not created"}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="rounded-2xl bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm">
+              Conversation ID: {conversationId ?? "Not created"}
+            </div>
+            <button
+              type="button"
+              onClick={handleNewConversation}
+              disabled={loading}
+              className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-skyline hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              New conversation
+            </button>
           </div>
         </div>
       </div>
@@ -101,16 +150,13 @@ export function ChatPage() {
             rows={2}
             className="max-h-28 min-h-[72px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-skyline focus:bg-white"
           />
-          <div className="flex flex-col gap-3 lg:w-[260px]">
-            <FileUpload file={selectedFile} onChange={setSelectedFile} />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className="rounded-2xl bg-ink px-4 py-3 font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? "Analyzing..." : "Send message"}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="rounded-2xl bg-ink px-6 py-3 font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 lg:w-[180px]"
+          >
+            {loading ? "Analyzing..." : "Send message"}
+          </button>
         </div>
       </form>
     </section>
