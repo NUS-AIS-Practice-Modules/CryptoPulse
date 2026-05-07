@@ -32,6 +32,22 @@ function makePieTooltip(total: number) {
   };
 }
 
+function renderPieLabel({ cx, cy, midAngle, innerRadius, outerRadius, value, total }: {
+  cx: number; cy: number; midAngle: number;
+  innerRadius: number; outerRadius: number; value: number; total: number;
+}) {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+      {pct}%
+    </text>
+  );
+}
+
 export function Charts({ summary }: ChartsProps) {
   const pieTotal = summary.distribution.reduce((s, e) => s + e.value, 0);
   const PieTooltip = makePieTooltip(pieTotal);
@@ -73,6 +89,8 @@ export function Charts({ summary }: ChartsProps) {
                 innerRadius={65}
                 outerRadius={100}
                 paddingAngle={4}
+                label={(props) => renderPieLabel({ ...props, total: pieTotal })}
+                labelLine={false}
               >
                 {summary.distribution.map((entry, index) => (
                   <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />

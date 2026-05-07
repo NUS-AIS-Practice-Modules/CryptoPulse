@@ -86,6 +86,7 @@ async def handle_chat(
     # Step 2: NER
     entities = extract_entities(message)
     crypto_entities = [e for e in entities if e.type == "CRYPTO"]
+    logger.info("NER: %s", [(e.text, e.type) for e in entities])
 
     # Step 3: Sentiment lookup (only when needed)
     sentiment: dict | None = None
@@ -103,16 +104,23 @@ async def handle_chat(
                 "bearish": result.scores.get("bearish", 0.0),
                 "neutral": result.scores.get("neutral", 0.0),
             }
-        elif intent.sentiment_scope == "global" or not crypto_entities:
+        elif intent.sentiment_scope == "coin" and crypto_entities:
+            dr = intent.date_range or {}
+            sentiment = sentiment_cache.lookup_coin_date_range(
+                crypto_entities[0].text,
+                dr.get("start", "2026-05-01"),
+                dr.get("end", "2026-05-07"),
+            )
+        else:
             dr = intent.date_range or {}
             sentiment = sentiment_cache.lookup_date_range(
-                dr.get("start", "2026-04-30"), dr.get("end", "2026-05-07")
+                dr.get("start", "2026-05-01"), dr.get("end", "2026-05-07")
             )
 
     # Step 4: RAG retrieval (only when needed)
     rag_context, sources = "", []
     if intent.needs_rag:
-        entity_texts = [e.text for e in crypto_entities]
+        entity_texts = [e.text for e in entities]
         rag_query = f"{message} {' '.join(entity_texts)}" if entity_texts else message
         rag_context, sources = _get_rag_context(rag_query)
 

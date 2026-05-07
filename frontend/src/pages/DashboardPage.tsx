@@ -3,16 +3,32 @@ import { Charts } from "../components/Charts";
 import { getSentimentSummary } from "../services/api";
 import type { DashboardSummary } from "../types";
 
+interface DashboardPageProps {
+  selectedRange: "7d" | "30d" | "90d";
+  onRangeChange: (r: "7d" | "30d" | "90d") => void;
+  selectedCrypto: "ALL" | "BTC" | "ETH" | "SOL" | "DOGE" | "SHIB" | "XRP";
+  onCryptoChange: (c: "ALL" | "BTC" | "ETH" | "SOL" | "DOGE" | "SHIB" | "XRP") => void;
+}
+
 const timeRanges = [
   { key: "7d", label: "7 Days" },
   { key: "30d", label: "30 Days" },
   { key: "90d", label: "90 Days" }
 ] as const;
 
-export function DashboardPage() {
+const cryptoOptions = [
+  { key: "ALL",  label: "All" },
+  { key: "BTC",  label: "BTC" },
+  { key: "ETH",  label: "ETH" },
+  { key: "SOL",  label: "SOL" },
+  { key: "DOGE", label: "DOGE" },
+  { key: "SHIB", label: "SHIB" },
+  { key: "XRP",  label: "XRP" },
+] as const;
+
+export function DashboardPage({ selectedRange, onRangeChange, selectedCrypto, onCryptoChange }: DashboardPageProps) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedRange, setSelectedRange] = useState<(typeof timeRanges)[number]["key"]>("7d");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,7 +36,7 @@ export function DashboardPage() {
       try {
         setLoading(true);
         setError(null);
-        const summaryData = await getSentimentSummary(selectedRange);
+        const summaryData = await getSentimentSummary(selectedRange, selectedCrypto);
         setSummary(summaryData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Dashboard failed to load");
@@ -30,7 +46,7 @@ export function DashboardPage() {
     }
 
     void load();
-  }, [selectedRange]);
+  }, [selectedRange, selectedCrypto]);
 
   return (
     <section className="flex h-full flex-col gap-5">
@@ -44,21 +60,39 @@ export function DashboardPage() {
             Track sentiment trends, Bullish/Bearish/Neutral mix, top topics, and system health.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {timeRanges.map((range) => (
-            <button
-              key={range.key}
-              type="button"
-              onClick={() => setSelectedRange(range.key)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                selectedRange === range.key
-                  ? "bg-ink text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            {timeRanges.map((range) => (
+              <button
+                key={range.key}
+                type="button"
+                onClick={() => onRangeChange(range.key)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  selectedRange === range.key
+                    ? "bg-ink text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {cryptoOptions.map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => onCryptoChange(c.key)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  selectedCrypto === c.key
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

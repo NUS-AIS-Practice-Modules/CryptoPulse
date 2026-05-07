@@ -40,6 +40,12 @@ _EXAMPLES = [
     {"role": "assistant", "content": '{"needs_sentiment":true,"needs_rag":false,"sentiment_scope":"global","sentiment_days":null,"date_range":{"start":"2026-02-20","end":"2026-03-12"}}'},
     {"role": "user", "content": "Is Bitcoin bullish right now?"},
     {"role": "assistant", "content": '{"needs_sentiment":true,"needs_rag":true,"sentiment_scope":"coin","sentiment_days":7,"date_range":null}'},
+    {"role": "user", "content": "What is Bitcoin's sentiment this week?"},
+    {"role": "assistant", "content": '{"needs_sentiment":true,"needs_rag":false,"sentiment_scope":"coin","sentiment_days":7,"date_range":null}'},
+    {"role": "user", "content": "How has Ethereum been feeling over the last month?"},
+    {"role": "assistant", "content": '{"needs_sentiment":true,"needs_rag":false,"sentiment_scope":"coin","sentiment_days":30,"date_range":null}'},
+    {"role": "user", "content": "Show me Solana's sentiment over the past 30 days"},
+    {"role": "assistant", "content": '{"needs_sentiment":true,"needs_rag":false,"sentiment_scope":"coin","sentiment_days":30,"date_range":null}'},
     {"role": "user", "content": "Tell me about Ethereum's technology"},
     {"role": "assistant", "content": '{"needs_sentiment":false,"needs_rag":true,"sentiment_scope":null,"sentiment_days":null,"date_range":null}'},
     {"role": "user", "content": "Hello, what can you do?"},
@@ -55,11 +61,19 @@ class Intent:
     date_range: dict | None        # {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"} | None
 
 
+def _get_ref_date() -> date:
+    try:
+        from src.services.sentiment_service import _LAST_DATE
+        return max(date.today(), _LAST_DATE)
+    except Exception:
+        return date.today()
+
+
 def _days_to_range(days: int) -> dict:
-    today = date.today()
+    end = _get_ref_date()
     return {
-        "start": (today - timedelta(days=days - 1)).isoformat(),
-        "end": today.isoformat(),
+        "start": (end - timedelta(days=days - 1)).isoformat(),
+        "end": end.isoformat(),
     }
 
 
@@ -90,8 +104,21 @@ def classify_intent(message: str, api_key: str, model: str) -> Intent:
         sentiment_days = data.get("sentiment_days")
         if sentiment_days:
             date_range = _days_to_range(int(sentiment_days))
+        elif data.get("date_range"):
+            dr = data["date_range"]
+            # Fix LLM off-by-one: if span is N+1 days, shrink start by 1
+            try:
+                from datetime import datetime as dt
+                s = dt.fromisoformat(dr["start"]).date()
+                e = dt.fromisoformat(dr["end"]).date()
+                span = (e - s).days + 1
+                # Recompute start so span equals intended days (round down to nearest 7/30/90)
+                intended = min([7, 30, 90], key=lambda n: abs(span - n))
+                date_range = {"start": (e - timedelta(days=intended - 1)).isoformat(), "end": e.isoformat()}
+            except Exception:
+                date_range = dr
         else:
-            date_range = data.get("date_range")
+            date_range = None
 
         return Intent(
             needs_sentiment=bool(data.get("needs_sentiment", True)),

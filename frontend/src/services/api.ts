@@ -102,7 +102,7 @@ export async function sendChatMessage(payload: ChatPayload): Promise<ChatReply> 
   };
 }
 
-export async function getSentimentSummary(period = "7d", crypto = "BTC"): Promise<DashboardSummary> {
+export async function getSentimentSummary(period = "7d", crypto = "ALL"): Promise<DashboardSummary> {
   if (USE_MOCK) {
     await new Promise((resolve) => window.setTimeout(resolve, 500));
     return mockDashboardSummary;
