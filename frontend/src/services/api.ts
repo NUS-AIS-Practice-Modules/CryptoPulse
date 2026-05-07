@@ -110,20 +110,35 @@ export async function getSentimentSummary(period = "7d", crypto = "BTC"): Promis
 
   const params = new URLSearchParams({ crypto, period });
   const response = await request<SentimentSummaryApiResponse>(`/api/sentiment/summary?${params}`);
-  const latest = response.trend[response.trend.length - 1] || { bullish: 0, bearish: 0, neutral: 0 };
+  const totals = response.trend.reduce(
+    (acc, t) => ({ bullish: acc.bullish + t.bullish, bearish: acc.bearish + t.bearish, neutral: acc.neutral + t.neutral }),
+    { bullish: 0, bearish: 0, neutral: 0 }
+  );
+  const total = totals.bullish + totals.bearish + totals.neutral;
+  const bullishRatio = total > 0 ? `${((totals.bullish / total) * 100).toFixed(1)}%` : "N/A";
+
+  const half = Math.floor(response.trend.length / 2);
+  const firstHalf = response.trend.slice(0, half);
+  const secondHalf = response.trend.slice(half);
+  const bullRatio = (arr: typeof response.trend) => {
+    const s = arr.reduce((a, t) => ({ b: a.b + t.bullish, tot: a.tot + t.bullish + t.bearish + t.neutral }), { b: 0, tot: 0 });
+    return s.tot > 0 ? s.b / s.tot : 0;
+  };
+  const diff = bullRatio(secondHalf) - bullRatio(firstHalf);
+  const trendDirection = diff > 0.03 ? "Rising" : diff < -0.03 ? "Falling" : "Stable";
 
   return {
     totalAnalyses: response.data_points_analyzed,
-    activeTopics: response.top_topics.length,
-    health: "Healthy",
+    overallSentiment: response.overall_sentiment,
+    bullishRatio,
+    trendDirection,
     lastUpdated: new Date().toLocaleString(),
     trend: response.trend,
     distribution: [
-      { name: "Bullish", value: latest.bullish },
-      { name: "Bearish", value: latest.bearish },
-      { name: "Neutral", value: latest.neutral }
+      { name: "Bullish", value: totals.bullish },
+      { name: "Bearish", value: totals.bearish },
+      { name: "Neutral", value: totals.neutral }
     ],
-    topTopics: response.top_topics
   };
 }
 

@@ -1,8 +1,542 @@
-{
-  "BTC": {"overall": "Bullish", "bullish": 0.60, "bearish": 0.25, "neutral": 0.15, "sample_count": 15234},
-  "ETH": {"overall": "Neutral", "bullish": 0.38, "bearish": 0.35, "neutral": 0.27, "sample_count": 8901},
-  "SOL": {"overall": "Bullish", "bullish": 0.55, "bearish": 0.28, "neutral": 0.17, "sample_count": 4532},
-  "BNB": {"overall": "Neutral", "bullish": 0.40, "bearish": 0.33, "neutral": 0.27, "sample_count": 3210},
-  "XRP": {"overall": "Bearish", "bullish": 0.22, "bearish": 0.55, "neutral": 0.23, "sample_count": 6700},
-  "DOGE": {"overall": "Bullish", "bullish": 0.65, "bearish": 0.18, "neutral": 0.17, "sample_count": 9800}
-}
+[
+  {
+    "date": "02-07",
+    "bullish": 40,
+    "bearish": 34,
+    "neutral": 47
+  },
+  {
+    "date": "02-08",
+    "bullish": 42,
+    "bearish": 29,
+    "neutral": 29
+  },
+  {
+    "date": "02-09",
+    "bullish": 46,
+    "bearish": 55,
+    "neutral": 63
+  },
+  {
+    "date": "02-10",
+    "bullish": 54,
+    "bearish": 53,
+    "neutral": 57
+  },
+  {
+    "date": "02-11",
+    "bullish": 52,
+    "bearish": 46,
+    "neutral": 57
+  },
+  {
+    "date": "02-12",
+    "bullish": 58,
+    "bearish": 49,
+    "neutral": 61
+  },
+  {
+    "date": "02-13",
+    "bullish": 57,
+    "bearish": 62,
+    "neutral": 64
+  },
+  {
+    "date": "02-14",
+    "bullish": 39,
+    "bearish": 29,
+    "neutral": 40
+  },
+  {
+    "date": "02-15",
+    "bullish": 36,
+    "bearish": 54,
+    "neutral": 43
+  },
+  {
+    "date": "02-16",
+    "bullish": 63,
+    "bearish": 54,
+    "neutral": 61
+  },
+  {
+    "date": "02-17",
+    "bullish": 57,
+    "bearish": 59,
+    "neutral": 59
+  },
+  {
+    "date": "02-18",
+    "bullish": 54,
+    "bearish": 65,
+    "neutral": 59
+  },
+  {
+    "date": "02-19",
+    "bullish": 68,
+    "bearish": 50,
+    "neutral": 66
+  },
+  {
+    "date": "02-20",
+    "bullish": 53,
+    "bearish": 56,
+    "neutral": 67
+  },
+  {
+    "date": "02-21",
+    "bullish": 50,
+    "bearish": 44,
+    "neutral": 46
+  },
+  {
+    "date": "02-22",
+    "bullish": 42,
+    "bearish": 44,
+    "neutral": 45
+  },
+  {
+    "date": "02-23",
+    "bullish": 46,
+    "bearish": 46,
+    "neutral": 66
+  },
+  {
+    "date": "02-24",
+    "bullish": 66,
+    "bearish": 49,
+    "neutral": 58
+  },
+  {
+    "date": "02-25",
+    "bullish": 69,
+    "bearish": 55,
+    "neutral": 52
+  },
+  {
+    "date": "02-26",
+    "bullish": 54,
+    "bearish": 53,
+    "neutral": 59
+  },
+  {
+    "date": "02-27",
+    "bullish": 47,
+    "bearish": 52,
+    "neutral": 57
+  },
+  {
+    "date": "02-28",
+    "bullish": 46,
+    "bearish": 40,
+    "neutral": 61
+  },
+  {
+    "date": "03-01",
+    "bullish": 86,
+    "bearish": 81,
+    "neutral": 128
+  },
+  {
+    "date": "03-02",
+    "bullish": 64,
+    "bearish": 80,
+    "neutral": 86
+  },
+  {
+    "date": "03-03",
+    "bullish": 52,
+    "bearish": 56,
+    "neutral": 75
+  },
+  {
+    "date": "03-04",
+    "bullish": 65,
+    "bearish": 49,
+    "neutral": 72
+  },
+  {
+    "date": "03-05",
+    "bullish": 68,
+    "bearish": 47,
+    "neutral": 66
+  },
+  {
+    "date": "03-06",
+    "bullish": 71,
+    "bearish": 52,
+    "neutral": 51
+  },
+  {
+    "date": "03-07",
+    "bullish": 53,
+    "bearish": 27,
+    "neutral": 37
+  },
+  {
+    "date": "03-08",
+    "bullish": 45,
+    "bearish": 32,
+    "neutral": 35
+  },
+  {
+    "date": "03-09",
+    "bullish": 67,
+    "bearish": 47,
+    "neutral": 59
+  },
+  {
+    "date": "03-10",
+    "bullish": 75,
+    "bearish": 57,
+    "neutral": 66
+  },
+  {
+    "date": "03-11",
+    "bullish": 55,
+    "bearish": 63,
+    "neutral": 56
+  },
+  {
+    "date": "03-12",
+    "bullish": 56,
+    "bearish": 55,
+    "neutral": 46
+  },
+  {
+    "date": "03-13",
+    "bullish": 34,
+    "bearish": 63,
+    "neutral": 60
+  },
+  {
+    "date": "03-14",
+    "bullish": 23,
+    "bearish": 54,
+    "neutral": 26
+  },
+  {
+    "date": "03-15",
+    "bullish": 27,
+    "bearish": 61,
+    "neutral": 22
+  },
+  {
+    "date": "03-16",
+    "bullish": 31,
+    "bearish": 70,
+    "neutral": 43
+  },
+  {
+    "date": "03-17",
+    "bullish": 33,
+    "bearish": 82,
+    "neutral": 44
+  },
+  {
+    "date": "03-18",
+    "bullish": 46,
+    "bearish": 92,
+    "neutral": 59
+  },
+  {
+    "date": "03-19",
+    "bullish": 57,
+    "bearish": 188,
+    "neutral": 80
+  },
+  {
+    "date": "03-20",
+    "bullish": 23,
+    "bearish": 102,
+    "neutral": 57
+  },
+  {
+    "date": "03-21",
+    "bullish": 22,
+    "bearish": 50,
+    "neutral": 22
+  },
+  {
+    "date": "03-22",
+    "bullish": 10,
+    "bearish": 43,
+    "neutral": 38
+  },
+  {
+    "date": "03-23",
+    "bullish": 27,
+    "bearish": 81,
+    "neutral": 41
+  },
+  {
+    "date": "03-24",
+    "bullish": 31,
+    "bearish": 86,
+    "neutral": 35
+  },
+  {
+    "date": "03-25",
+    "bullish": 31,
+    "bearish": 81,
+    "neutral": 47
+  },
+  {
+    "date": "03-26",
+    "bullish": 27,
+    "bearish": 81,
+    "neutral": 44
+  },
+  {
+    "date": "03-27",
+    "bullish": 49,
+    "bearish": 63,
+    "neutral": 53
+  },
+  {
+    "date": "03-28",
+    "bullish": 15,
+    "bearish": 67,
+    "neutral": 38
+  },
+  {
+    "date": "03-29",
+    "bullish": 32,
+    "bearish": 51,
+    "neutral": 32
+  },
+  {
+    "date": "03-30",
+    "bullish": 35,
+    "bearish": 71,
+    "neutral": 49
+  },
+  {
+    "date": "03-31",
+    "bullish": 24,
+    "bearish": 76,
+    "neutral": 43
+  },
+  {
+    "date": "04-01",
+    "bullish": 34,
+    "bearish": 67,
+    "neutral": 36
+  },
+  {
+    "date": "04-02",
+    "bullish": 30,
+    "bearish": 61,
+    "neutral": 47
+  },
+  {
+    "date": "04-03",
+    "bullish": 30,
+    "bearish": 58,
+    "neutral": 42
+  },
+  {
+    "date": "04-04",
+    "bullish": 21,
+    "bearish": 51,
+    "neutral": 35
+  },
+  {
+    "date": "04-05",
+    "bullish": 25,
+    "bearish": 38,
+    "neutral": 46
+  },
+  {
+    "date": "04-06",
+    "bullish": 36,
+    "bearish": 65,
+    "neutral": 49
+  },
+  {
+    "date": "04-07",
+    "bullish": 45,
+    "bearish": 54,
+    "neutral": 64
+  },
+  {
+    "date": "04-08",
+    "bullish": 50,
+    "bearish": 48,
+    "neutral": 69
+  },
+  {
+    "date": "04-09",
+    "bullish": 76,
+    "bearish": 67,
+    "neutral": 80
+  },
+  {
+    "date": "04-10",
+    "bullish": 160,
+    "bearish": 115,
+    "neutral": 156
+  },
+  {
+    "date": "04-11",
+    "bullish": 56,
+    "bearish": 44,
+    "neutral": 66
+  },
+  {
+    "date": "04-12",
+    "bullish": 46,
+    "bearish": 34,
+    "neutral": 36
+  },
+  {
+    "date": "04-13",
+    "bullish": 74,
+    "bearish": 52,
+    "neutral": 69
+  },
+  {
+    "date": "04-14",
+    "bullish": 69,
+    "bearish": 52,
+    "neutral": 55
+  },
+  {
+    "date": "04-15",
+    "bullish": 51,
+    "bearish": 51,
+    "neutral": 59
+  },
+  {
+    "date": "04-16",
+    "bullish": 74,
+    "bearish": 56,
+    "neutral": 74
+  },
+  {
+    "date": "04-17",
+    "bullish": 70,
+    "bearish": 47,
+    "neutral": 64
+  },
+  {
+    "date": "04-18",
+    "bullish": 53,
+    "bearish": 30,
+    "neutral": 40
+  },
+  {
+    "date": "04-19",
+    "bullish": 49,
+    "bearish": 29,
+    "neutral": 36
+  },
+  {
+    "date": "04-20",
+    "bullish": 67,
+    "bearish": 35,
+    "neutral": 55
+  },
+  {
+    "date": "04-21",
+    "bullish": 99,
+    "bearish": 31,
+    "neutral": 49
+  },
+  {
+    "date": "04-22",
+    "bullish": 80,
+    "bearish": 28,
+    "neutral": 51
+  },
+  {
+    "date": "04-23",
+    "bullish": 70,
+    "bearish": 29,
+    "neutral": 50
+  },
+  {
+    "date": "04-24",
+    "bullish": 95,
+    "bearish": 30,
+    "neutral": 47
+  },
+  {
+    "date": "04-25",
+    "bullish": 79,
+    "bearish": 26,
+    "neutral": 51
+  },
+  {
+    "date": "04-26",
+    "bullish": 131,
+    "bearish": 48,
+    "neutral": 79
+  },
+  {
+    "date": "04-27",
+    "bullish": 121,
+    "bearish": 49,
+    "neutral": 53
+  },
+  {
+    "date": "04-28",
+    "bullish": 81,
+    "bearish": 33,
+    "neutral": 31
+  },
+  {
+    "date": "04-29",
+    "bullish": 89,
+    "bearish": 30,
+    "neutral": 45
+  },
+  {
+    "date": "04-30",
+    "bullish": 65,
+    "bearish": 35,
+    "neutral": 45
+  },
+  {
+    "date": "05-01",
+    "bullish": 68,
+    "bearish": 46,
+    "neutral": 46
+  },
+  {
+    "date": "05-02",
+    "bullish": 43,
+    "bearish": 42,
+    "neutral": 44
+  },
+  {
+    "date": "05-03",
+    "bullish": 38,
+    "bearish": 34,
+    "neutral": 39
+  },
+  {
+    "date": "05-04",
+    "bullish": 59,
+    "bearish": 43,
+    "neutral": 59
+  },
+  {
+    "date": "05-05",
+    "bullish": 74,
+    "bearish": 52,
+    "neutral": 68
+  },
+  {
+    "date": "05-06",
+    "bullish": 62,
+    "bearish": 59,
+    "neutral": 60
+  },
+  {
+    "date": "05-07",
+    "bullish": 59,
+    "bearish": 45,
+    "neutral": 76
+  }
+]
