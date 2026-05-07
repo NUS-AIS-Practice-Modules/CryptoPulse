@@ -75,7 +75,10 @@ async def handle_chat(
 ) -> dict:
     # Step 1: Intent classification
     if settings.use_mock:
-        intent = Intent(needs_sentiment=True, needs_rag=True, sentiment_period="7d", sentiment_scope="global")
+        from datetime import date, timedelta
+        today = date.today()
+        intent = Intent(needs_sentiment=True, needs_rag=True, sentiment_scope="global",
+                        date_range={"start": (today - timedelta(days=6)).isoformat(), "end": today.isoformat()})
     else:
         intent = classify_intent(message, settings.openai_api_key, settings.openai_ner_model)
     logger.info("Intent: %s", intent)
@@ -101,8 +104,10 @@ async def handle_chat(
                 "neutral": result.scores.get("neutral", 0.0),
             }
         elif intent.sentiment_scope == "global" or not crypto_entities:
-            period = intent.sentiment_period or "7d"
-            sentiment = sentiment_cache.lookup_period(period)
+            dr = intent.date_range or {}
+            sentiment = sentiment_cache.lookup_date_range(
+                dr.get("start", "2026-04-30"), dr.get("end", "2026-05-07")
+            )
 
     # Step 4: RAG retrieval (only when needed)
     rag_context, sources = "", []
