@@ -41,7 +41,7 @@ Edit `.env` after copying:
 ```env
 USE_MOCK=true
 RAG_USE_MOCK=false
-NER_BACKEND=llm
+NER_BACKEND=lora
 LLM_BACKEND=openai
 OPENAI_API_KEY=sk-your-key-here    # only needed when USE_MOCK=false
 OPENAI_NER_MODEL=gpt-4o-mini
@@ -67,14 +67,14 @@ USE_MOCK=true .venv/bin/uvicorn src.app:app --reload --port 8000
 # Real mode (requires OPENAI_API_KEY and RAG module ready)
 USE_MOCK=false .venv/bin/uvicorn src.app:app --reload --port 8000
 
-# Isolated AutoDL LoRA mode (real LoRA, mock RAG)
-USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false \
+# Isolated AutoDL LoRA mode (real LoRA intent/NER/chat/sentiment, mock RAG)
+USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora NER_BACKEND=lora LORA_USE_MOCK=false \
   LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 \
   LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY \
   .venv/bin/uvicorn src.app:app --reload --port 8000
 
 # Full no-mock mode (real RAG, real AutoDL LoRA)
-USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false \
+USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora NER_BACKEND=lora LORA_USE_MOCK=false \
   LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 \
   LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY \
   USE_MILVUS_NATIVE_HYBRID=true \

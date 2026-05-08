@@ -220,6 +220,18 @@ User: Hello
 Assistant: {"needs_sentiment":false,"needs_rag":false,"sentiment_scope":null,"sentiment_days":null,"date_range":null}
 Do not include markdown, explanation, or additional examples."""
 
+_NER_SYSTEM_PROMPT = """Extract cryptocurrency-related named entities from the current user message.
+Return exactly one JSON object with this shape:
+{"entities":[{"normalized":"BTC","original_mention":"Bitcoin","type":"CRYPTO","confidence":0.95}]}
+Entity types: CRYPTO, EXCHANGE, PERSON, REGULATORY_BODY, EVENT.
+Rules:
+- Normalize crypto entities to ticker symbols, for example Bitcoin -> BTC and Ethereum -> ETH.
+- Normalize exchanges to canonical names, for example Binance, Coinbase, Kraken, OKX.
+- Normalize regulators to official abbreviations, for example SEC and CFTC.
+- Use short event labels such as FTX Collapse or ETF Approval.
+- If no entities are found, return {"entities":[]}.
+Do not include markdown, explanation, or additional examples."""
+
 
 def _extract_json_object(text: str) -> dict[str, Any] | None:
     content = text.strip()
@@ -331,6 +343,48 @@ def _intent_from_text(text: str) -> dict[str, Any]:
     }
 
 
+def _entity_confidence(value: Any) -> float:
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        confidence = 0.9
+    return max(0.0, min(1.0, confidence))
+
+
+def _entities_from_text(text: str) -> dict[str, Any]:
+    payload = _extract_json_object(text)
+    if not isinstance(payload, dict):
+        return {"entities": []}
+
+    raw_entities = payload.get("entities", [])
+    if not isinstance(raw_entities, list):
+        return {"entities": []}
+
+    entities: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for item in raw_entities:
+        if not isinstance(item, dict):
+            continue
+        normalized = str(item.get("normalized") or item.get("text") or "").strip()
+        original = str(item.get("original_mention") or item.get("original") or normalized).strip()
+        entity_type = str(item.get("type") or "CRYPTO").strip().upper()
+        if not normalized:
+            continue
+        key = (normalized.lower(), entity_type)
+        if key in seen:
+            continue
+        entities.append(
+            {
+                "normalized": normalized,
+                "original_mention": original,
+                "type": entity_type,
+                "confidence": _entity_confidence(item.get("confidence", 0.9)),
+            }
+        )
+        seen.add(key)
+    return {"entities": entities}
+
+
 def _mock_intent(prompt: str) -> dict[str, Any]:
     text = prompt.lower()
     coin_terms = {
@@ -376,6 +430,43 @@ def _mock_intent(prompt: str) -> dict[str, Any]:
         "sentiment_days": days,
         "date_range": None,
     }
+
+
+def _mock_entities(text: str) -> dict[str, Any]:
+    known = {
+        "bitcoin": ("BTC", "CRYPTO"), "btc": ("BTC", "CRYPTO"),
+        "ethereum": ("ETH", "CRYPTO"), "eth": ("ETH", "CRYPTO"),
+        "solana": ("SOL", "CRYPTO"), "sol": ("SOL", "CRYPTO"),
+        "binance coin": ("BNB", "CRYPTO"), "bnb": ("BNB", "CRYPTO"),
+        "ripple": ("XRP", "CRYPTO"), "xrp": ("XRP", "CRYPTO"),
+        "dogecoin": ("DOGE", "CRYPTO"), "doge": ("DOGE", "CRYPTO"),
+        "binance": ("Binance", "EXCHANGE"),
+        "coinbase": ("Coinbase", "EXCHANGE"),
+        "kraken": ("Kraken", "EXCHANGE"),
+        "sec": ("SEC", "REGULATORY_BODY"),
+        "cftc": ("CFTC", "REGULATORY_BODY"),
+        "ftx": ("FTX Collapse", "EVENT"),
+        "etf approval": ("ETF Approval", "EVENT"),
+    }
+    lower = text.lower()
+    seen: set[tuple[str, str]] = set()
+    entities: list[dict[str, Any]] = []
+    for mention, (normalized, entity_type) in known.items():
+        key = (normalized.lower(), entity_type)
+        if key in seen:
+            continue
+        if lower.find(mention) == -1:
+            continue
+        entities.append(
+            {
+                "normalized": normalized,
+                "original_mention": mention,
+                "type": entity_type,
+                "confidence": 0.99,
+            }
+        )
+        seen.add(key)
+    return {"entities": entities}
 
 
 def _lexical_sentiment(text: str) -> SentimentResult:
@@ -438,6 +529,25 @@ def classify_intent(prompt: str) -> dict[str, Any]:
         return _intent_from_text(content)
 
     return _mock_intent(prompt)
+
+
+def extract_entities(text: str) -> dict[str, Any]:
+    if not text or not text.strip():
+        return {"entities": []}
+    if not _mock_enabled():
+        _real_mode_unavailable()
+        content = _chat_completion(
+            model=_chat_model(),
+            messages=[
+                {"role": "system", "content": _NER_SYSTEM_PROMPT},
+                {"role": "user", "content": text},
+            ],
+            temperature=0,
+            max_tokens=256,
+        )
+        return _entities_from_text(content)
+
+    return _mock_entities(text)
 
 
 def batch_predict_sentiment(texts: list[str]) -> list[SentimentResult]:

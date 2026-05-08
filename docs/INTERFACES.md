@@ -239,6 +239,41 @@ Errors:
 | InvalidInput | Empty prompt | raises `ValueError` |
 | ModelNotLoaded | Runtime unavailable | raises `RuntimeError` |
 
+### Function: `extract_entities`
+
+```python
+def extract_entities(text: str) -> dict:
+    ...
+```
+
+Output:
+
+```json
+{
+  "entities": [
+    {
+      "normalized": "BTC",
+      "original_mention": "Bitcoin",
+      "type": "CRYPTO",
+      "confidence": 0.95
+    }
+  ]
+}
+```
+
+Runtime behavior:
+
+- Uses `ift-lora` through the existing AutoDL OpenAI-compatible `/chat/completions` endpoint when `LORA_USE_MOCK=false`
+- Uses deterministic local entity fixtures when `LORA_USE_MOCK=true`
+- Parses strict JSON, fenced JSON, or the first JSON object in mixed output
+- Returns `{"entities": []}` when model output cannot be parsed
+
+Errors:
+
+| Error | When | How signaled |
+|-------|------|--------------|
+| ModelNotLoaded | Runtime unavailable | raises `RuntimeError` |
+
 ### Function: `batch_predict_sentiment`
 
 ```python
@@ -363,3 +398,9 @@ Errors:
 Mock behavior:
 
 - In mock mode, entity extraction may use hardcoded fixtures or a simplified parser
+
+Real backend behavior:
+
+- `NER_BACKEND=lora` uses LoRA `extract_entities()` as the primary path, then falls back to OpenAI NER, then local rules
+- `NER_BACKEND=llm` keeps the OpenAI NER path
+- `NER_BACKEND=model` is reserved for the future BERTweet backend

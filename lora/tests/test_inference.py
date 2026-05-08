@@ -7,7 +7,13 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.inference import api
-from src.inference import batch_predict_sentiment, classify_intent, generate_response, predict_sentiment
+from src.inference import (
+    batch_predict_sentiment,
+    classify_intent,
+    extract_entities,
+    generate_response,
+    predict_sentiment,
+)
 
 
 def test_predict_sentiment_returns_shared_shape():
@@ -90,6 +96,16 @@ def test_classify_intent_mock_returns_json_shape():
     assert result["date_range"] is None
 
 
+def test_extract_entities_mock_returns_json_shape():
+    result = extract_entities("Bitcoin and the SEC discussed ETF approval.")
+
+    assert isinstance(result["entities"], list)
+    by_normalized = {entity["normalized"]: entity for entity in result["entities"]}
+    assert by_normalized["BTC"]["type"] == "CRYPTO"
+    assert by_normalized["SEC"]["type"] == "REGULATORY_BODY"
+    assert by_normalized["ETF Approval"]["type"] == "EVENT"
+
+
 def test_real_mode_uses_remote_ift_for_intent(monkeypatch):
     monkeypatch.setenv("LORA_USE_MOCK", "false")
     monkeypatch.setenv("LORA_REMOTE_BASE_URL", "https://autodl.example/v1")
@@ -114,6 +130,32 @@ def test_real_mode_uses_remote_ift_for_intent(monkeypatch):
     result = api.classify_intent("Hello")
     assert result["needs_sentiment"] is False
     assert result["needs_rag"] is False
+
+
+def test_real_mode_uses_remote_ift_for_ner(monkeypatch):
+    monkeypatch.setenv("LORA_USE_MOCK", "false")
+    monkeypatch.setenv("LORA_REMOTE_BASE_URL", "https://autodl.example/v1")
+
+    def fake_post(path, payload):
+        assert path == "/chat/completions"
+        assert payload["model"] == "ift-lora"
+        assert payload["temperature"] == 0
+        assert payload["max_tokens"] == 256
+        assert payload["messages"][-1] == {"role": "user", "content": "Bitcoin and SEC"}
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"entities":[{"normalized":"BTC","original_mention":"Bitcoin","type":"CRYPTO","confidence":0.95}]}'
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(api, "_post_remote", fake_post)
+    result = api.extract_entities("Bitcoin and SEC")
+    assert result["entities"][0]["normalized"] == "BTC"
+    assert result["entities"][0]["confidence"] == 0.95
 
 
 def test_intent_parser_handles_fenced_json_and_falls_back():
@@ -146,6 +188,25 @@ def test_intent_parser_handles_fenced_json_and_falls_back():
     assert fallback["needs_sentiment"] is True
     assert fallback["needs_rag"] is True
     assert fallback["sentiment_scope"] == "global"
+
+
+def test_ner_parser_handles_fenced_json_extra_text_and_empty():
+    parsed = api._entities_from_text(
+        '```json\n{"entities":[{"normalized":"ETH","original_mention":"Ethereum","type":"CRYPTO","confidence":"0.88"}]}\n```'
+    )
+    assert parsed["entities"][0]["normalized"] == "ETH"
+    assert parsed["entities"][0]["confidence"] == 0.88
+
+    first_json = api._entities_from_text(
+        'Result:\n{"entities":[{"normalized":"SEC","original_mention":"SEC","type":"REGULATORY_BODY","confidence":0.91}]}\nUser: Hello'
+    )
+    assert first_json["entities"][0]["type"] == "REGULATORY_BODY"
+
+    empty = api._entities_from_text('{"entities":[]}')
+    assert empty == {"entities": []}
+
+    malformed = api._entities_from_text("not json")
+    assert malformed == {"entities": []}
 
 
 def test_sentiment_fallback_parses_non_json_text():

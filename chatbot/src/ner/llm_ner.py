@@ -59,7 +59,47 @@ def _normalize_entity_text(normalized: str, original: str, entity_type: str) -> 
             "okx": "OKX",
         }
         return exchanges.get(original_key) or exchanges.get(normalized_key) or normalized
+    if entity_type == "EVENT":
+        original_key = original.strip().lower()
+        normalized_key = normalized.strip().lower()
+        events = {
+            "ftx": "FTX Collapse",
+            "ftx collapse": "FTX Collapse",
+            "etf": "ETF Approval",
+            "bitcoin etf": "ETF Approval",
+            "etf approval": "ETF Approval",
+        }
+        return events.get(original_key) or events.get(normalized_key) or normalized
     return normalized
+
+
+def entities_from_payload(data: dict, text: str) -> list[Entity]:
+    entities: list[Entity] = []
+    seen: set[tuple[str, str]] = set()
+    for item in data.get("entities", []):
+        normalized = str(item.get("normalized", "")).strip()
+        original = str(item.get("original_mention", normalized)).strip()
+        entity_type = str(item.get("type", "CRYPTO")).strip().upper()
+        if not normalized:
+            continue
+        normalized_text = _normalize_entity_text(normalized, original, entity_type)
+        key = (normalized_text.lower(), entity_type)
+        if key in seen:
+            continue
+        start, end = _find_offset(text, original)
+        try:
+            confidence = float(item.get("confidence", 0.9))
+        except (TypeError, ValueError):
+            confidence = 0.9
+        entities.append(Entity(
+            text=normalized_text,
+            type=entity_type,
+            start=start,
+            end=end,
+            confidence=max(0.0, min(1.0, confidence)),
+        ))
+        seen.add(key)
+    return entities
 
 
 def _fallback_entities(text: str) -> list[Entity]:
@@ -120,20 +160,7 @@ def extract_entities(text: str) -> list[Entity]:
 
     try:
         data = json.loads(raw)
-        entities = []
-        for item in data.get("entities", []):
-            normalized = item.get("normalized", "")
-            original = item.get("original_mention", normalized)
-            entity_type = item.get("type", "CRYPTO")
-            start, end = _find_offset(text, original)
-            entities.append(Entity(
-                text=_normalize_entity_text(normalized, original, entity_type),
-                type=entity_type,
-                start=start,
-                end=end,
-                confidence=float(item.get("confidence", 0.9)),
-            ))
-        return entities
+        return entities_from_payload(data, text)
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         logger.error("NER JSON parse failed: %s | raw=%s", e, raw[:200])
         return _fallback_entities(text)

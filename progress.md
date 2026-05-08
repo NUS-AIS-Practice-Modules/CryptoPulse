@@ -3,7 +3,7 @@
 ## Current State
 
 **Last Updated:** 2026-05-08
-**Active Feature:** LoRA-IFT intent routing
+**Active Feature:** LoRA-IFT intent and NER routing
 
 ## Status
 
@@ -37,6 +37,7 @@
 - [x] Added `docs/DEMO_CHECKLIST.md` with startup order, recording script, expected evidence, non-blocking gaps, and troubleshooting.
 - [x] Fixed real/mock status consistency. Frontend Settings now reads current Vite runtime env, Dashboard shows `Frontend Mode`, and Chatbot health now probes AutoDL vLLM `/models` before reporting real LoRA as ok.
 - [x] Added LoRA-IFT intent routing. LoRA now exposes `classify_intent()` through the existing AutoDL vLLM wrapper using `ift-lora`, and Chatbot routes intent classification through LoRA when `LLM_BACKEND=lora` while preserving the OpenAI path.
+- [x] Added LoRA-IFT NER routing. LoRA now exposes `extract_entities()` through the existing AutoDL vLLM wrapper using `ift-lora`, and Chatbot routes NER through LoRA first when `NER_BACKEND=lora`, then falls back to OpenAI and local rules.
 
 ### What's In Progress
 
@@ -101,6 +102,10 @@
   - Context: `intent_service.py` previously called OpenAI directly even in LoRA backend mode
   - Alternatives considered: point OpenAI SDK config at AutoDL or call AutoDL directly from Chatbot
   - Reason: routing through the LoRA wrapper preserves module boundaries and keeps NER/OpenAI configuration separate from intent classification
+- **LoRA-IFT NER routing**: Use `ift-lora` for Chatbot NER when `NER_BACKEND=lora`, with OpenAI and local rules as fallbacks
+  - Context: NER previously used OpenAI as the real path, while the demo now needs LoRA to own intent and entity extraction
+  - Alternatives considered: keep OpenAI as primary or call AutoDL directly from Chatbot
+  - Reason: routing through the LoRA wrapper preserves module boundaries, while local supplements keep high-frequency demo entities stable when model output is sparse
 
 ## Evidence of Completion
 
@@ -139,6 +144,7 @@
 - [x] 2026-05-08: LoRA-IFT intent routing implemented and verified. `cd lora && .venv/bin/python -m pytest tests -q` passed with 10 tests, and `cd chatbot && USE_MOCK=true .venv/bin/python -m pytest tests -q` passed with 28 tests.
 - [x] 2026-05-08: Full real-chain verification passed with AutoDL running. `python scripts/verify_full_no_mock_e2e.py` returned `full no-mock e2e ok`, RAG reported collection `cryptopulse_rag_hybrid_bge_m3_bm25` with `documents_indexed=1961`, and targeted intent probes confirmed BTC sentiment triggers sentiment/no RAG, Ethereum technology triggers RAG/no sentiment, and Hello triggers neither.
 - [x] 2026-05-08: Fixed the five failed real routing matrix cases by adding deterministic intent policy overrides and broader NER fallback coverage for regulators, exchanges, and events. The requested 14-case real matrix passed 14/14 after restarting Chatbot with `OPENAI_API_KEY` from `chatbot/.env`; Chatbot tests passed with 30 tests and LoRA tests passed with 10 tests.
+- [x] 2026-05-08: Implemented LoRA-IFT NER primary routing. LoRA `extract_entities()` uses `ift-lora` through AutoDL `/chat/completions`; Chatbot `NER_BACKEND=lora` uses LoRA first, OpenAI second, and local rules as final/supplemental fallback. Verification passed: LoRA tests 13 passed, Chatbot tests 35 passed, `/api/health` reported `ner.backend=lora`, and the 14-case real service matrix passed 14/14 with SEC/CFTC/ETF, exchange, FTX, and coin entities present.
 
 ## Notes for Next Session
 

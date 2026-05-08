@@ -67,13 +67,14 @@
         "LORA-004"
       ],
       "status": "passing",
-      "evidence": "2026-04-27: Implemented deterministic mock/fallback wrappers for `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` under `lora/src/inference`. 2026-04-28 update: replaced the temporary custom endpoint plan with the verified AutoDL OpenAI-compatible vLLM `/chat/completions` integration. `predict_sentiment` uses `sentiment-lora`, normalizes lower-case labels, and fills missing scores; `generate_response` uses `ift-lora` and strips `<|eot_id|>`. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), direct AutoDL real-mode calls through the local SSH tunnel returning Bullish sentiment and non-empty ift-lora text, and Chatbot isolated `USE_MOCK=false RAG_USE_MOCK=true` API verification. 2026-05-08: Added `classify_intent()` wrapper using `ift-lora` for structured Chatbot intent routing, with mock heuristics and JSON/key-value fallback parsing. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (10 passed). Real AutoDL tunnel verification returned the expected intent routes for BTC sentiment, Ethereum technology, and Hello through Chatbot.",
+      "evidence": "2026-04-27: Implemented deterministic mock/fallback wrappers for `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` under `lora/src/inference`. 2026-04-28 update: replaced the temporary custom endpoint plan with the verified AutoDL OpenAI-compatible vLLM `/chat/completions` integration. `predict_sentiment` uses `sentiment-lora`, normalizes lower-case labels, and fills missing scores; `generate_response` uses `ift-lora` and strips `<|eot_id|>`. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), direct AutoDL real-mode calls through the local SSH tunnel returning Bullish sentiment and non-empty ift-lora text, and Chatbot isolated `USE_MOCK=false RAG_USE_MOCK=true` API verification. 2026-05-08: Added `classify_intent()` wrapper using `ift-lora` for structured Chatbot intent routing, with mock heuristics and JSON/key-value fallback parsing. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (10 passed). Real AutoDL tunnel verification returned the expected intent routes for BTC sentiment, Ethereum technology, and Hello through Chatbot. Later 2026-05-08: Added `extract_entities()` wrapper using `ift-lora` for structured NER JSON, with mock fixtures and parser support for strict JSON, fenced JSON, and mixed text. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (13 passed) and Chatbot real matrix using `NER_BACKEND=lora`.",
       "verification": [
         "mock/fallback functions return shared dataclass shapes",
         "invalid input raises ValueError",
         "real mode without remote configuration raises RuntimeError",
         "AutoDL remote LoRA endpoint integration succeeds",
-        "classify_intent returns structured intent routing JSON"
+        "classify_intent returns structured intent routing JSON",
+        "extract_entities returns structured NER JSON"
       ]
     }
   ]
