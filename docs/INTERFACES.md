@@ -9,6 +9,7 @@ This file is the single source of truth for all cross-module interfaces. Update 
 | Chatbot REST API | Chatbot | Frontend | defined |
 | Sentiment inference | LoRA | Chatbot | defined |
 | Response generation | LoRA | Chatbot | defined |
+| Intent classification | LoRA | Chatbot | defined |
 | Retrieval API | RAG | Chatbot | defined |
 | NER extraction | Chatbot | Frontend response pipeline | defined |
 
@@ -206,6 +207,38 @@ Mock behavior:
 
 - Returns deterministic stub text with a mock model name
 
+### Function: `classify_intent`
+
+```python
+def classify_intent(prompt: str) -> dict:
+    ...
+```
+
+Output:
+
+```json
+{
+  "needs_sentiment": true,
+  "needs_rag": false,
+  "sentiment_scope": "coin",
+  "sentiment_days": 7,
+  "date_range": null
+}
+```
+
+Runtime behavior:
+
+- Uses `ift-lora` through the existing AutoDL OpenAI-compatible `/chat/completions` endpoint when `LORA_USE_MOCK=false`
+- Uses deterministic local routing heuristics when `LORA_USE_MOCK=true`
+- Returns a stable global 7-day sentiment + RAG fallback shape if model output cannot be parsed as JSON
+
+Errors:
+
+| Error | When | How signaled |
+|-------|------|--------------|
+| InvalidInput | Empty prompt | raises `ValueError` |
+| ModelNotLoaded | Runtime unavailable | raises `RuntimeError` |
+
 ### Function: `batch_predict_sentiment`
 
 ```python
@@ -330,4 +363,3 @@ Errors:
 Mock behavior:
 
 - In mock mode, entity extraction may use hardcoded fixtures or a simplified parser
-

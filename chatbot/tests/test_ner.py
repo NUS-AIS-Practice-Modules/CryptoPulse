@@ -3,6 +3,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 os.environ["USE_MOCK"] = "true"
 
 from src.ner.ner_service import extract_entities
+from src.ner.llm_ner import _fallback_entities, _normalize_entity_text
 
 
 def test_bitcoin_detected():
@@ -35,3 +36,21 @@ def test_entity_confidence_in_range():
 
 def test_empty_string_returns_empty():
     assert extract_entities("") == []
+
+
+def test_fallback_detects_regulators_and_exchanges():
+    entities = _fallback_entities("Compare Binance, Coinbase and Kraken after SEC and CFTC action on FTX.")
+    by_text = {e.text: e.type for e in entities}
+
+    assert by_text["Binance"] == "EXCHANGE"
+    assert by_text["Coinbase"] == "EXCHANGE"
+    assert by_text["Kraken"] == "EXCHANGE"
+    assert by_text["SEC"] == "REGULATORY_BODY"
+    assert by_text["CFTC"] == "REGULATORY_BODY"
+    assert by_text["FTX Collapse"] == "EVENT"
+
+
+def test_exchange_entities_are_normalized_from_llm_aliases():
+    assert _normalize_entity_text("BNB", "Binance", "EXCHANGE") == "Binance"
+    assert _normalize_entity_text("COIN", "Coinbase", "EXCHANGE") == "Coinbase"
+    assert _normalize_entity_text("KRK", "Kraken", "EXCHANGE") == "Kraken"

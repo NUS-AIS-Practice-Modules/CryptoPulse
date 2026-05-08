@@ -45,32 +45,56 @@ def _find_offset(text: str, mention: str) -> tuple[int, int]:
     return idx, idx + len(mention)
 
 
+def _normalize_entity_text(normalized: str, original: str, entity_type: str) -> str:
+    if entity_type == "EXCHANGE":
+        original_key = original.strip().lower()
+        normalized_key = normalized.strip().lower()
+        exchanges = {
+            "binance": "Binance",
+            "bnb": "Binance",
+            "coinbase": "Coinbase",
+            "coin": "Coinbase",
+            "kraken": "Kraken",
+            "krk": "Kraken",
+            "okx": "OKX",
+        }
+        return exchanges.get(original_key) or exchanges.get(normalized_key) or normalized
+    return normalized
+
+
 def _fallback_entities(text: str) -> list[Entity]:
     known = {
-        "bitcoin": "BTC", "btc": "BTC",
-        "ethereum": "ETH", "eth": "ETH",
-        "solana": "SOL", "sol": "SOL",
-        "binance coin": "BNB", "bnb": "BNB",
-        "ripple": "XRP", "xrp": "XRP",
-        "dogecoin": "DOGE", "doge": "DOGE",
+        "bitcoin": ("BTC", "CRYPTO"), "btc": ("BTC", "CRYPTO"),
+        "ethereum": ("ETH", "CRYPTO"), "eth": ("ETH", "CRYPTO"),
+        "solana": ("SOL", "CRYPTO"), "sol": ("SOL", "CRYPTO"),
+        "binance coin": ("BNB", "CRYPTO"), "bnb": ("BNB", "CRYPTO"),
+        "ripple": ("XRP", "CRYPTO"), "xrp": ("XRP", "CRYPTO"),
+        "dogecoin": ("DOGE", "CRYPTO"), "doge": ("DOGE", "CRYPTO"),
+        "binance": ("Binance", "EXCHANGE"),
+        "coinbase": ("Coinbase", "EXCHANGE"),
+        "kraken": ("Kraken", "EXCHANGE"),
+        "sec": ("SEC", "REGULATORY_BODY"),
+        "cftc": ("CFTC", "REGULATORY_BODY"),
+        "ftx": ("FTX Collapse", "EVENT"),
+        "etf approval": ("ETF Approval", "EVENT"),
     }
     lower = text.lower()
     seen: set[str] = set()
     entities: list[Entity] = []
-    for mention, ticker in known.items():
-        if ticker in seen:
+    for mention, (normalized, entity_type) in known.items():
+        if normalized in seen:
             continue
         start = lower.find(mention)
         if start == -1:
             continue
         entities.append(Entity(
-            text=ticker,
-            type="CRYPTO",
+            text=normalized,
+            type=entity_type,
             start=start,
             end=start + len(mention),
             confidence=0.75,
         ))
-        seen.add(ticker)
+        seen.add(normalized)
     return entities
 
 
@@ -100,10 +124,11 @@ def extract_entities(text: str) -> list[Entity]:
         for item in data.get("entities", []):
             normalized = item.get("normalized", "")
             original = item.get("original_mention", normalized)
+            entity_type = item.get("type", "CRYPTO")
             start, end = _find_offset(text, original)
             entities.append(Entity(
-                text=normalized,
-                type=item.get("type", "CRYPTO"),
+                text=_normalize_entity_text(normalized, original, entity_type),
+                type=entity_type,
                 start=start,
                 end=end,
                 confidence=float(item.get("confidence", 0.9)),

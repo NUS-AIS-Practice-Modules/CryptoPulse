@@ -2,6 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import date, timedelta
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -80,52 +81,119 @@ def _days_to_range(days: int) -> dict:
 _FALLBACK = Intent(needs_sentiment=True, needs_rag=True, sentiment_scope="global", date_range=_days_to_range(7))
 
 
-def classify_intent(message: str, api_key: str, model: str) -> Intent:
+def _classify_with_openai(message: str, api_key: str, model: str) -> dict:
     today = date.today().isoformat()
     system = _SYSTEM_PROMPT.format(today=today)
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system},
+            *_EXAMPLES,
+            {"role": "user", "content": message},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0,
+        max_tokens=100,
+    )
+    raw = response.choices[0].message.content or "{}"
+    return json.loads(raw)
+
+
+def _classify_with_lora(message: str) -> dict:
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    from lora.src.inference import classify_intent as classify_lora_intent  # type: ignore
+
+    return classify_lora_intent(message)
+
+
+def _as_bool(value, default: bool = True) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"true", "1", "yes"}:
+        return True
+    if normalized in {"false", "0", "no"}:
+        return False
+    return default
+
+
+def _apply_policy_overrides(message: str, data: dict) -> dict:
+    lower = message.lower()
+    routed = dict(data)
+
+    if lower.strip().rstrip("?.!") in {"what is a blockchain", "what's a blockchain"}:
+        routed.update({
+            "needs_sentiment": False,
+            "needs_rag": False,
+            "sentiment_scope": None,
+            "sentiment_days": None,
+            "date_range": None,
+        })
+        return routed
+
+    if "ftx collapse" in lower:
+        routed.update({"needs_sentiment": False, "needs_rag": True, "sentiment_scope": None})
+        return routed
+
+    if ("sec" in lower or "cftc" in lower) and ("etf" in lower or "approval" in lower):
+        routed.update({"needs_sentiment": False, "needs_rag": True, "sentiment_scope": None})
+        return routed
+
+    if lower.startswith("compare ") and any(exchange in lower for exchange in ("binance", "coinbase", "kraken")):
+        routed.update({"needs_sentiment": False, "needs_rag": True, "sentiment_scope": None})
+        return routed
+
+    if _as_bool(routed.get("needs_sentiment"), True) and any(
+        term in lower for term in ("right now", "recently", "latest developments", "what has been happening")
+    ):
+        routed["needs_rag"] = True
+
+    return routed
+
+
+def _intent_from_payload(data: dict) -> Intent:
+    # Python computes relative date ranges from days, avoiding LLM date arithmetic.
+    sentiment_days = data.get("sentiment_days")
+    if sentiment_days:
+        date_range = _days_to_range(int(sentiment_days))
+    elif data.get("date_range"):
+        dr = data["date_range"]
+        # Preserve the existing explicit-date correction behavior.
+        try:
+            from datetime import datetime as dt
+            s = dt.fromisoformat(dr["start"]).date()
+            e = dt.fromisoformat(dr["end"]).date()
+            span = (e - s).days + 1
+            intended = min([7, 30, 90], key=lambda n: abs(span - n))
+            date_range = {"start": (e - timedelta(days=intended - 1)).isoformat(), "end": e.isoformat()}
+        except Exception:
+            date_range = dr
+    else:
+        date_range = None
+
+    return Intent(
+        needs_sentiment=_as_bool(data.get("needs_sentiment"), True),
+        needs_rag=_as_bool(data.get("needs_rag"), True),
+        sentiment_scope=data.get("sentiment_scope"),
+        date_range=date_range,
+    )
+
+
+def classify_intent(message: str, api_key: str, model: str) -> Intent:
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system},
-                *_EXAMPLES,
-                {"role": "user", "content": message},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0,
-            max_tokens=100,
-        )
-        raw = response.choices[0].message.content or "{}"
-        data = json.loads(raw)
-
-        # Python computes the date range from days — no LLM arithmetic needed
-        sentiment_days = data.get("sentiment_days")
-        if sentiment_days:
-            date_range = _days_to_range(int(sentiment_days))
-        elif data.get("date_range"):
-            dr = data["date_range"]
-            # Fix LLM off-by-one: if span is N+1 days, shrink start by 1
-            try:
-                from datetime import datetime as dt
-                s = dt.fromisoformat(dr["start"]).date()
-                e = dt.fromisoformat(dr["end"]).date()
-                span = (e - s).days + 1
-                # Recompute start so span equals intended days (round down to nearest 7/30/90)
-                intended = min([7, 30, 90], key=lambda n: abs(span - n))
-                date_range = {"start": (e - timedelta(days=intended - 1)).isoformat(), "end": e.isoformat()}
-            except Exception:
-                date_range = dr
+        if settings.llm_backend == "lora":
+            data = _classify_with_lora(message)
         else:
-            date_range = None
-
-        return Intent(
-            needs_sentiment=bool(data.get("needs_sentiment", True)),
-            needs_rag=bool(data.get("needs_rag", True)),
-            sentiment_scope=data.get("sentiment_scope"),
-            date_range=date_range,
-        )
+            data = _classify_with_openai(message, api_key, model)
+        data = _apply_policy_overrides(message, data)
+        return _intent_from_payload(data)
     except Exception as e:
         logger.warning("Intent classification failed (%s) — using fallback", e)
         return _FALLBACK

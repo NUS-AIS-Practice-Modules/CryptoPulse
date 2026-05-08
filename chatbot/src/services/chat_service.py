@@ -80,6 +80,8 @@ async def handle_chat(
         intent = Intent(needs_sentiment=True, needs_rag=True, sentiment_scope="global",
                         date_range={"start": (today - timedelta(days=6)).isoformat(), "end": today.isoformat()})
     else:
+        if settings.llm_backend == "lora":
+            _configure_lora_environment()
         intent = classify_intent(message, settings.openai_api_key, settings.openai_ner_model)
     logger.info("Intent: %s", intent)
 

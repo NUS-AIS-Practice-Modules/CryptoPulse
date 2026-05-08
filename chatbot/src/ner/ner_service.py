@@ -21,27 +21,34 @@ def extract_entities(text: str) -> list[Entity]:
 def _mock_entities(text: str) -> list[Entity]:
     """Simple keyword-based mock for USE_MOCK=true."""
     known = {
-        "bitcoin": "BTC", "btc": "BTC",
-        "ethereum": "ETH", "eth": "ETH",
-        "solana": "SOL", "sol": "SOL",
-        "binance coin": "BNB", "bnb": "BNB",
-        "ripple": "XRP", "xrp": "XRP",
-        "dogecoin": "DOGE", "doge": "DOGE",
+        "bitcoin": ("BTC", "CRYPTO"), "btc": ("BTC", "CRYPTO"),
+        "ethereum": ("ETH", "CRYPTO"), "eth": ("ETH", "CRYPTO"),
+        "solana": ("SOL", "CRYPTO"), "sol": ("SOL", "CRYPTO"),
+        "binance coin": ("BNB", "CRYPTO"), "bnb": ("BNB", "CRYPTO"),
+        "ripple": ("XRP", "CRYPTO"), "xrp": ("XRP", "CRYPTO"),
+        "dogecoin": ("DOGE", "CRYPTO"), "doge": ("DOGE", "CRYPTO"),
+        "binance": ("Binance", "EXCHANGE"),
+        "coinbase": ("Coinbase", "EXCHANGE"),
+        "kraken": ("Kraken", "EXCHANGE"),
+        "sec": ("SEC", "REGULATORY_BODY"),
+        "cftc": ("CFTC", "REGULATORY_BODY"),
+        "ftx": ("FTX Collapse", "EVENT"),
+        "etf approval": ("ETF Approval", "EVENT"),
     }
     lower = text.lower()
     seen: set[str] = set()
     results: list[Entity] = []
-    for mention, ticker in known.items():
-        if ticker in seen:
+    for mention, (normalized, entity_type) in known.items():
+        if normalized in seen:
             continue
         idx = lower.find(mention)
         if idx != -1:
             results.append(Entity(
-                text=ticker,
-                type="CRYPTO",
+                text=normalized,
+                type=entity_type,
                 start=idx,
                 end=idx + len(mention),
                 confidence=0.99,
             ))
-            seen.add(ticker)
+            seen.add(normalized)
     return results
