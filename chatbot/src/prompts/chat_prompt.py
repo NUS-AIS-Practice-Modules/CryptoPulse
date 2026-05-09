@@ -10,19 +10,27 @@ def build_messages(
     sentiment: dict | None,
     entities: list[Entity],
     history: list[dict],
+    intent=None,
 ) -> list[dict]:
     system_parts = [
         "You are CryptoPulse, an AI assistant specializing in cryptocurrency market "
         "sentiment and risk intelligence. Provide concise, factual insights grounded "
-        "in the retrieved context below. Do not speculate beyond the provided data.",
-        f"\nRetrieved Knowledge:\n{rag_context}",
+        "in the data provided. Do not speculate beyond the provided data.",
     ]
 
-    crypto_entities = [e for e in entities if e.type == "CRYPTO"]
-    if sentiment and crypto_entities:
-        names = ", ".join(e.text for e in crypto_entities)
+    if rag_context:
+        system_parts.append(f"\nRetrieved Knowledge:\n{rag_context}")
+
+    if sentiment:
+        period = sentiment.get("period", "7d")
+        scope = getattr(intent, "sentiment_scope", None) if intent else None
+        if scope == "global" or not [e for e in entities if e.type == "CRYPTO"]:
+            label = f"Overall Market Sentiment (past {period})"
+        else:
+            names = ", ".join(e.text for e in entities if e.type == "CRYPTO")
+            label = f"Market Sentiment for {names} (past {period})"
         system_parts.append(
-            f"\nMarket Sentiment for {names}: {sentiment['overall']} "
+            f"\n{label}: {sentiment['overall']} "
             f"(Bullish {sentiment['bullish']:.0%} / "
             f"Bearish {sentiment['bearish']:.0%} / "
             f"Neutral {sentiment['neutral']:.0%}, "

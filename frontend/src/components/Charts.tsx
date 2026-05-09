@@ -19,7 +19,38 @@ interface ChartsProps {
 
 const COLORS = ["#1d4ed8", "#c2410c", "#0f766e"];
 
+function makePieTooltip(total: number) {
+  return function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) {
+    if (!active || !payload?.length) return null;
+    const { name, value } = payload[0];
+    const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow">
+        <span className="font-medium">{name}</span>: {pct}%
+      </div>
+    );
+  };
+}
+
+function renderPieLabel({ cx, cy, midAngle, innerRadius, outerRadius, value, total }: {
+  cx: number; cy: number; midAngle: number;
+  innerRadius: number; outerRadius: number; value: number; total: number;
+}) {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0";
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+      {pct}%
+    </text>
+  );
+}
+
 export function Charts({ summary }: ChartsProps) {
+  const pieTotal = summary.distribution.reduce((s, e) => s + e.value, 0);
+  const PieTooltip = makePieTooltip(pieTotal);
   return (
     <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
       <section className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-panel">
@@ -58,12 +89,14 @@ export function Charts({ summary }: ChartsProps) {
                 innerRadius={65}
                 outerRadius={100}
                 paddingAngle={4}
+                label={(props) => renderPieLabel({ ...props, total: pieTotal })}
+                labelLine={false}
               >
                 {summary.distribution.map((entry, index) => (
                   <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip content={<PieTooltip />} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>

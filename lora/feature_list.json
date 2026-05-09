@@ -3,76 +3,78 @@
   "features": [
     {
       "id": "LORA-001",
-      "title": "多源数据收集与统一格式化",
-      "description": "收集并格式化 IFT 与情绪分类数据集。",
+      "title": "Multi-Source Data Collection and Unified Formatting",
+      "description": "Collect and format IFT and sentiment-classification datasets.",
       "dependencies": [],
       "status": "not_started",
       "evidence": "Owner planning docs exist under lora/documents, but no verified dataset build artifacts are present in this repository yet.",
       "verification": [
-        "IFT 数据集完成 LLaMA-Factory JSON 格式化",
-        "情绪分类数据集完成统一格式化",
-        "dataset_info.json 注册完成"
+        "IFT dataset is converted to the LLaMA-Factory JSON format",
+        "Sentiment-classification datasets are converted into one unified format",
+        "dataset_info.json registration is complete"
       ]
     },
     {
       "id": "LORA-002",
-      "title": "Twitter 数据的价格弱监督打标",
-      "description": "基于价格窗口为无标签社交数据生成 Bullish/Bearish/Neutral 标签。",
+      "title": "Price-Based Weak Supervision for Twitter Data",
+      "description": "Generate Bullish/Bearish/Neutral labels for unlabeled social data from price windows.",
       "dependencies": [
         "LORA-001"
       ],
       "status": "not_started",
       "evidence": "No verified weak-labeling output is present in this repository yet.",
       "verification": [
-        "弱监督脚本可运行",
-        "输出三类标签",
-        "标签分布合理"
+        "Weak-supervision script runs successfully",
+        "Outputs all three sentiment labels",
+        "Label distribution is reasonable"
       ]
     },
     {
       "id": "LORA-003",
-      "title": "阶段一 LoRA-IFT 通用金融指令微调",
-      "description": "使用 LLaMA-Factory 完成第一阶段金融指令微调。",
+      "title": "Stage 1 LoRA-IFT General Financial Instruction Tuning",
+      "description": "Use LLaMA-Factory to complete the first-stage financial instruction tuning run.",
       "dependencies": [
         "LORA-001"
       ],
       "status": "not_started",
       "evidence": "Training configs and shell scripts are present, but no GPU training run or checkpoint evidence is recorded yet.",
       "verification": [
-        "训练配置有效",
-        "GPU 训练任务启动成功",
-        "loss 与 checkpoint 证据记录完成"
+        "Training configuration is valid",
+        "GPU training job starts successfully",
+        "Loss and checkpoint evidence is recorded"
       ]
     },
     {
       "id": "LORA-004",
-      "title": "阶段二 LoRA-Sentiment 加密情绪微调与评估",
-      "description": "完成情绪分类微调并输出自动化评估指标。",
+      "title": "Stage 2 LoRA-Sentiment Crypto Fine-Tuning and Evaluation",
+      "description": "Complete sentiment fine-tuning and output automated evaluation metrics.",
       "dependencies": [
         "LORA-003"
       ],
       "status": "not_started",
       "evidence": "No verified sentiment training checkpoint or Macro-F1 report is recorded yet.",
       "verification": [
-        "训练完成",
+        "Training completes",
         "Macro-F1 >= 0.80",
         "Bullish/Bearish F1 >= 0.75"
       ]
     },
     {
       "id": "LORA-005",
-      "title": "LLM 推理管线与 API 接口封装",
-      "description": "提供 Chatbot 调用的 sentiment 与 generation Python 函数。",
+      "title": "LLM Inference Pipeline and API Wrapper",
+      "description": "Provide sentiment and generation Python functions for Chatbot.",
       "dependencies": [
         "LORA-004"
       ],
       "status": "passing",
-      "evidence": "2026-04-27: Implemented deterministic mock/fallback wrappers for `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` under `lora/src/inference`. 2026-04-28 update: replaced the temporary custom endpoint plan with the verified AutoDL OpenAI-compatible vLLM `/chat/completions` integration. `predict_sentiment` uses `sentiment-lora`, normalizes lower-case labels, and fills missing scores; `generate_response` uses `ift-lora` and strips `<|eot_id|>`. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), direct AutoDL real-mode calls through the local SSH tunnel returning Bullish sentiment and non-empty ift-lora text, and Chatbot isolated `USE_MOCK=false RAG_USE_MOCK=true` API verification.",
+      "evidence": "2026-04-27: Implemented deterministic mock/fallback wrappers for `predict_sentiment`, `batch_predict_sentiment`, and `generate_response` under `lora/src/inference`. 2026-04-28 update: replaced the temporary custom endpoint plan with the verified AutoDL OpenAI-compatible vLLM `/chat/completions` integration. `predict_sentiment` uses `sentiment-lora`, normalizes lower-case labels, and fills missing scores; `generate_response` uses `ift-lora` and strips `<|eot_id|>`. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (7 passed), direct AutoDL real-mode calls through the local SSH tunnel returning Bullish sentiment and non-empty ift-lora text, and Chatbot isolated `USE_MOCK=false RAG_USE_MOCK=true` API verification. 2026-05-08: Added `classify_intent()` wrapper using `ift-lora` for structured Chatbot intent routing, with mock heuristics and JSON/key-value fallback parsing. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (10 passed). Real AutoDL tunnel verification returned the expected intent routes for BTC sentiment, Ethereum technology, and Hello through Chatbot. Later 2026-05-08: Added `extract_entities()` wrapper using `ift-lora` for structured NER JSON, with mock fixtures and parser support for strict JSON, fenced JSON, and mixed text. Verified with `cd lora && .venv/bin/python -m pytest tests -q` (13 passed) and Chatbot real matrix using `NER_BACKEND=lora`.",
       "verification": [
         "mock/fallback functions return shared dataclass shapes",
         "invalid input raises ValueError",
         "real mode without remote configuration raises RuntimeError",
-        "AutoDL remote LoRA endpoint integration succeeds"
+        "AutoDL remote LoRA endpoint integration succeeds",
+        "classify_intent returns structured intent routing JSON",
+        "extract_entities returns structured NER JSON"
       ]
     }
   ]

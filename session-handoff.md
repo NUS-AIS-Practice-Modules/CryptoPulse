@@ -26,8 +26,10 @@
 - Chatbot `/api/health` now probes the configured Milvus collection and reports unavailable details instead of a fixed RAG document count
 - Chatbot `/api/health` now probes AutoDL vLLM `/models` before reporting real LoRA as ok; missing tunnel/key/models degrade health instead of showing configuration-based ok
 - Full no-mock E2E passes with one Chatbot process using real RAG and real AutoDL LoRA; latest script output was `full no-mock e2e ok`
+- Full no-mock Chatbot matrix passes with `LLM_BACKEND=lora NER_BACKEND=lora`: 14/14 requested routing cases passed, including SEC/CFTC/ETF, exchange, FTX, and coin sentiment entity extraction
 - Frontend browser walkthrough passes against the full no-mock backend for Dashboard and Chat
 - Frontend Settings displays current Vite runtime env, and Dashboard shows `Frontend Mode` so mock and real-api states are distinguishable
+- Root and module Markdown/JSON documentation is now English-only where user-facing text existed, and the root `README.md` includes external Google Drive links for RAG datasets, LoRA checkpoints, and LoRA datasets
 
 ## Changed This Session
 
@@ -42,6 +44,7 @@
 - Imported 19 provided local PDFs plus 18 rendered web PDFs into ignored `rag/data/processed/normalized_documents.jsonl`
 - Rebuilt normalized corpus after seven problematic CoinShares PDFs were manually replaced in `rag/data/raw/web_pdfs/`
 - Reclassified new root PDFs in `rag/data/raw/`, added OCR fallback for scanned PDFs, and rebuilt ignored `data/processed/normalized_documents.jsonl` to 44 documents
+- Localized the remaining Chinese root/module Markdown and JSON planning documents into English and added external dataset/checkpoint links to the root `README.md`
 - Added `rag/src/indexing/` with chunking, BM25 index persistence, embedding providers, Milvus store adapter, and `build_index` CLI
 - Indexed the 44 normalized documents into 1961 chunks with mock embeddings; generated ignored `data/processed/chunks.jsonl` and `data/processed/bm25_index.json`
 - Updated `rag/SETUP.md` to use the Milvus v2.6.14 Docker Compose flow and module-local `.venv`
@@ -71,6 +74,8 @@
 - Added `docs/DEMO_CHECKLIST.md` and updated the Frontend chat bubble to show `Sources` plus source snippets for recording
 - Updated root and frontend trackers so milestone-006 and milestone-007 are passing after browser walkthrough evidence
 - Fixed real/mock status consistency across Frontend and Chatbot health reporting
+- Added LoRA `classify_intent()` and `extract_entities()` wrappers using `ift-lora`
+- Updated Chatbot NER routing to use LoRA first, OpenAI fallback second, and local keyword rules as the final/supplemental fallback
 
 ## Broken Or Unverified
 
@@ -120,6 +125,6 @@
 - Mock-first E2E services: `cd chatbot && USE_MOCK=true .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`; `cd frontend && VITE_USE_MOCK=false VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173`
 - Mock-first E2E verification: `python scripts/verify_mock_first_e2e.py`
 - AutoDL LoRA local wrapper check: `cd lora && LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY .venv/bin/python -c "from src.inference import predict_sentiment; print(predict_sentiment('Bitcoin ETF approved'))"`
-- Chatbot isolated real-LoRA check: `cd chatbot && USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
-- Chatbot full no-mock check: `cd chatbot && export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages && export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH" && USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=false MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base BM25_INDEX_PATH=../rag/data/processed/bm25_index.json HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
+- Chatbot isolated real-LoRA check: `cd chatbot && USE_MOCK=false RAG_USE_MOCK=true LLM_BACKEND=lora NER_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
+- Chatbot full no-mock check: `cd chatbot && export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages && export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH" && USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora NER_BACKEND=lora LORA_USE_MOCK=false LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=false MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base BM25_INDEX_PATH=../rag/data/processed/bm25_index.json HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000`
 - Full no-mock E2E verification: `python scripts/verify_full_no_mock_e2e.py`

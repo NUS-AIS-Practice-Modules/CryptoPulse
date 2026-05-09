@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Charts } from "../components/Charts";
-import { getHealthStatus, getSentimentSummary } from "../services/api";
-import type { DashboardSummary, HealthStatus } from "../types";
+import { getSentimentSummary } from "../services/api";
+import type { DashboardSummary } from "../types";
+
+interface DashboardPageProps {
+  selectedRange: "7d" | "30d" | "90d";
+  onRangeChange: (r: "7d" | "30d" | "90d") => void;
+  selectedCrypto: "ALL" | "BTC" | "ETH" | "SOL" | "DOGE" | "SHIB" | "XRP";
+  onCryptoChange: (c: "ALL" | "BTC" | "ETH" | "SOL" | "DOGE" | "SHIB" | "XRP") => void;
+}
 
 const timeRanges = [
   { key: "7d", label: "7 Days" },
@@ -9,11 +16,19 @@ const timeRanges = [
   { key: "90d", label: "90 Days" }
 ] as const;
 
-export function DashboardPage() {
+const cryptoOptions = [
+  { key: "ALL",  label: "All" },
+  { key: "BTC",  label: "BTC" },
+  { key: "ETH",  label: "ETH" },
+  { key: "SOL",  label: "SOL" },
+  { key: "DOGE", label: "DOGE" },
+  { key: "SHIB", label: "SHIB" },
+  { key: "XRP",  label: "XRP" },
+] as const;
+
+export function DashboardPage({ selectedRange, onRangeChange, selectedCrypto, onCryptoChange }: DashboardPageProps) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedRange, setSelectedRange] = useState<(typeof timeRanges)[number]["key"]>("7d");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,12 +36,8 @@ export function DashboardPage() {
       try {
         setLoading(true);
         setError(null);
-        const [summaryData, healthData] = await Promise.all([
-          getSentimentSummary(selectedRange),
-          getHealthStatus()
-        ]);
+        const summaryData = await getSentimentSummary(selectedRange, selectedCrypto);
         setSummary(summaryData);
-        setHealth(healthData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Dashboard failed to load");
       } finally {
@@ -35,7 +46,7 @@ export function DashboardPage() {
     }
 
     void load();
-  }, [selectedRange]);
+  }, [selectedRange, selectedCrypto]);
 
   return (
     <section className="flex h-full flex-col gap-5">
@@ -49,21 +60,39 @@ export function DashboardPage() {
             Track sentiment trends, Bullish/Bearish/Neutral mix, top topics, and system health.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {timeRanges.map((range) => (
-            <button
-              key={range.key}
-              type="button"
-              onClick={() => setSelectedRange(range.key)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                selectedRange === range.key
-                  ? "bg-ink text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            {timeRanges.map((range) => (
+              <button
+                key={range.key}
+                type="button"
+                onClick={() => onRangeChange(range.key)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  selectedRange === range.key
+                    ? "bg-ink text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {cryptoOptions.map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => onCryptoChange(c.key)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  selectedCrypto === c.key
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -71,39 +100,23 @@ export function DashboardPage() {
         <div className="rounded-[28px] bg-white/80 p-8 text-slate-500 shadow-panel">Loading...</div>
       ) : error ? (
         <div className="rounded-[28px] bg-rose-50 p-8 text-rose-700 shadow-panel">{error}</div>
-      ) : summary && health ? (
+      ) : summary ? (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard title="Total Analyses" value={String(summary.totalAnalyses)} />
-            <StatCard title="Active Topics" value={String(summary.activeTopics)} />
-            <StatCard title="Frontend Mode" value={health.frontendMode} />
-            <StatCard title="API Status" value={`${health.status} · ${health.message}`} />
+            <StatCard title="Overall Sentiment" value={summary.overallSentiment} />
+            <StatCard title="Bullish Ratio" value={summary.bullishRatio} />
+            <StatCard title="Trend Direction" value={summary.trendDirection} />
           </div>
 
           <Charts summary={summary} />
 
-          <section className="grid gap-6 xl:grid-cols-[1fr_1.2fr]">
-            <div className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-panel">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Top Topics</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {summary.topTopics.map((topic) => (
-                  <span
-                    key={topic}
-                    className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700"
-                  >
-                    {topic}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-panel">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Last Updated</p>
-              <p className="mt-4 font-display text-3xl font-semibold text-ink">{summary.lastUpdated}</p>
-              <p className="mt-3 text-slate-600">
-                The active time range is {selectedRange}. The dashboard is calling the real Chatbot API and refreshing sentiment trends for the selected range.
-              </p>
-            </div>
+          <section className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-panel">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Last Updated</p>
+            <p className="mt-4 font-display text-3xl font-semibold text-ink">{summary.lastUpdated}</p>
+            <p className="mt-3 text-slate-600">
+              Showing sentiment data for the past {selectedRange}. Trend direction compares the second half of the period against the first.
+            </p>
           </section>
         </>
       ) : null}

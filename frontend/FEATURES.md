@@ -1,80 +1,79 @@
-# Frontend 功能清单
+# Frontend Feature List
 
-## 规则
+## Rules
 
-- 一次只做一个功能
-- 验证通过才算完成
-- 优先完成聊天主流程
+- Work on one feature at a time
+- A feature is complete only after verification passes
+- Prioritize the main chat flow first
 
-## 功能列表
+## Features
 
-### FE-001: 项目初始化（priority: 1）
+### FE-001: Project Initialization (priority: 1)
 
-**描述**：初始化 React + TypeScript + Tailwind + Vite 项目。
+**Description**: Initialize the React + TypeScript + Tailwind + Vite project.
 
-**验证标准**
+**Verification**
 
-- [ ] `npm install` 成功
-- [ ] `npm run dev` 可启动
-- [ ] `npm run build` 成功
-- [ ] Tailwind CSS 生效
+- [ ] `npm install` succeeds
+- [ ] `npm run dev` starts successfully
+- [ ] `npm run build` succeeds
+- [ ] Tailwind CSS is active
 
-### FE-002: 聊天页面 UI（priority: 2）
+### FE-002: Chat Page UI (priority: 2)
 
-**描述**：实现聊天主页面。
+**Description**: Build the main chat page.
 
-**验证标准**
+**Verification**
 
-- [ ] 输入框可输入内容
-- [ ] 点击发送按钮可提交
-- [ ] 用户消息显示右侧
-- [ ] AI 消息显示左侧
-- [ ] 消息列表支持滚动
-- [ ] 页面布局正常
+- [ ] Input box accepts text
+- [ ] Send button submits successfully
+- [ ] User messages appear on the right
+- [ ] AI messages appear on the left
+- [ ] Message list supports scrolling
+- [ ] Page layout renders correctly
 
-### FE-003: 接入聊天 API（priority: 3）
+### FE-003: Chat API Integration (priority: 3)
 
-**描述**：连接 `POST /api/chat`。
+**Description**: Connect `POST /api/chat`.
 
-**验证标准**
+**Verification**
 
-- [ ] 点击发送调用 API
-- [ ] 返回 `reply` 正常显示
-- [ ] loading 动画正常
-- [ ] `conversation_id` 支持多轮对话
-- [ ] API 失败时有错误提示
+- [ ] Clicking send calls the API
+- [ ] Returned `reply` displays correctly
+- [ ] Loading animation works
+- [ ] `conversation_id` supports multi-turn chat
+- [ ] API failures show an error message
 
-### FE-004: 文件上传组件（priority: 4）
+### FE-004: File Upload Component (priority: 4)
 
-**描述**：实现文件上传功能 UI。
+**Description**: Build the file-upload UI component.
 
-**验证标准**
+**Verification**
 
-- [ ] 可选择文件
-- [ ] 显示文件名
-- [ ] 支持 PDF/TXT 文件
-- [ ] 上传区域 UI 正常显示
+- [ ] File selection works
+- [ ] File name is displayed
+- [ ] PDF/TXT files are supported
+- [ ] Upload-area UI renders correctly
 
-### FE-005: Dashboard 页面（priority: 5）
+### FE-005: Dashboard Page (priority: 5)
 
-**描述**：实现数据可视化页面。
+**Description**: Build the data-visualization page.
 
-**验证标准**
+**Verification**
 
-- [ ] 页面可访问
-- [ ] 折线图展示趋势
-- [ ] 饼图展示情绪占比
-- [ ] 数据来自 API
-- [ ] 筛选器可切换时间范围
+- [ ] Page is accessible
+- [ ] Line chart shows trend data
+- [ ] Pie chart shows sentiment distribution
+- [ ] Data comes from the API
+- [ ] Filter can switch the time range
 
-### FE-006: 状态检测与错误处理（priority: 6）
+### FE-006: Health Checks and Error Handling (priority: 6)
 
-**描述**：处理系统状态与异常提示。
+**Description**: Handle system status and failure feedback.
 
-**验证标准**
+**Verification**
 
-- [ ] `GET /api/health` 可调用
-- [ ] 后端异常时提示用户
-- [ ] Loading 状态正常
-- [ ] 网络错误有提示信息
-
+- [ ] `GET /api/health` can be called
+- [ ] Backend failures are surfaced to the user
+- [ ] Loading state behaves correctly
+- [ ] Network errors show useful messages

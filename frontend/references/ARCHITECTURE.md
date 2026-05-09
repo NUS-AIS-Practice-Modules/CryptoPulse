@@ -1,114 +1,127 @@
-# Frontend 模块架构
+# Frontend Module Architecture
 
-## 一句话概述
+## One-Line Summary
 
-Frontend 模块负责提供 CryptoPulse 的 Web 用户界面，承担用户与系统交互入口，包括聊天问答、文件上传、消息展示，以及可选 Dashboard 数据可视化页面。
-
----
-
-## 技术栈
-
-- **框架**: React  
-  组件化开发成熟，适合聊天页面与 Dashboard 页面构建,相较于next.js更轻巧。
-
-- **语言**: TypeScript  
-  保证接口类型安全，降低多人协作时 API 字段错误率。
-
-- **样式方案**: Tailwind CSS  
-  开发效率高，适合快速搭建现代化 UI。
-
-- **状态管理**: React Context + Hooks  
-  当前项目规模适中，轻量方案足够。
-
-- **图表库**: Recharts  
-  用于 Dashboard 折线图、饼图等展示。
-
-- **HTTP 客户端**: Fetch API
-
-- **构建工具**: Vite
+The Frontend module provides CryptoPulse's web UI and serves as the main entry point for user interaction, including chat Q&A, file upload, message display, and an optional dashboard for data visualization.
 
 ---
 
-## 页面结构
+## Tech Stack
 
-## 主聊天页面（核心页面）
+- **Framework**: React  
+  Mature component model, well suited to building chat and dashboard pages, and lighter than Next.js for this project.
+
+- **Language**: TypeScript  
+  Improves interface safety and reduces API-field mistakes during team collaboration.
+
+- **Styling**: Tailwind CSS  
+  High development speed and a practical fit for rapid modern UI work.
+
+- **State management**: React Context + Hooks  
+  A lightweight approach that is sufficient for the current project size.
+
+- **Charting library**: Recharts  
+  Used for dashboard line and pie charts.
+
+- **HTTP client**: Fetch API
+
+- **Build tool**: Vite
+
+---
+
+## Page Structure
+
+## Main Chat Page (Core Page)
 
 ```text
 ┌────────────────────────────────────────┐
-│ Header                                │
+│ Header                                 │
 ├──────────────┬─────────────────────────┤
-│ Sidebar      │ Chat Area              │
-│ - Chat       │ 消息列表               │
-│ - Dashboard  │ 输入框                 │
-│ - Settings   │ 上传按钮 + 发送按钮     │
+│ Sidebar      │ Chat Area               │
+│ - Chat       │ Message list            │
+│ - Dashboard  │ Input box               │
+│ - Settings   │ Upload button + Send    │
 └──────────────┴─────────────────────────┘
+```
+
 Sidebar
-	•	Chat 页面
-	•	Dashboard 页面
-	•	Settings（可选）
+
+- Chat page
+- Dashboard page
+- Settings (optional)
 
 Chat Area
-	•	消息列表（用户消息 / AI 消息）
-	•	输入框
-	•	文件上传按钮
-	•	发送按钮
-	•	Loading 状态
 
-⸻
+- Message list (user / AI messages)
+- Input box
+- File upload button
+- Send button
+- Loading state
 
-Dashboard 页面（可选）
+---
 
-展示情绪分析结果：
-	•	情绪趋势折线图
-	•	Bullish / Bearish / Neutral 分布图
-	•	Top Topics
-	•	数据统计卡片
+## Dashboard Page (Optional)
 
-⸻
+Shows sentiment-analysis results:
 
-与后端交互
+- sentiment trend line chart
+- Bullish / Bearish / Neutral distribution chart
+- Top Topics
+- summary data cards
 
-POST /api/chat
+---
 
-用途：
-	•	用户发送问题
-	•	获取 AI 回复
-	•	获取 sentiment / sources 数据
+## Backend Integration
 
-GET /api/sentiment/summary
+### `POST /api/chat`
 
-用途：
-	•	Dashboard 获取趋势图数据
+Used to:
 
-GET /api/health
+- send user questions
+- receive AI replies
+- receive sentiment and source data
 
-用途：
-	•	检查系统运行状态
+### `GET /api/sentiment/summary`
 
-⸻
+Used to:
 
-文件上传功能（预留）
+- fetch dashboard trend data
 
-支持：
-	•	PDF
-	•	TXT
-	•	DOCX（后续）
+### `GET /api/health`
 
-用途：
-	•	用户上传文档进行问答
-	•	RAG 文档分析
+Used to:
 
-关键设计决策
-| 决策   | 选择           | 理由           |
+- check system status
+
+---
+
+## File Upload (Reserved)
+
+Planned support:
+
+- PDF
+- TXT
+- DOCX (later)
+
+Used for:
+
+- user-uploaded document Q&A
+- RAG document analysis
+
+## Key Design Decisions
+
+| Decision | Choice | Reason |
 | ---- | ------------ | ------------ |
-| 前端框架 | React        | 生态成熟，组件化开发方便 |
-| 类型系统 | TypeScript   | 类型安全，降低联调错误  |
-| 样式方案 | Tailwind CSS | 开发效率高        |
-| 状态管理 | Context      | 当前项目规模足够     |
-| 图表库  | Recharts     | React 集成方便   |
-| 构建工具 | Vite         | 启动快，开发体验好    |
+| Frontend framework | React | Mature ecosystem and convenient component development |
+| Type system | TypeScript | Type safety and fewer integration errors |
+| Styling | Tailwind CSS | High development speed |
+| State management | Context | Sufficient for the current project size |
+| Charting library | Recharts | Easy React integration |
+| Build tool | Vite | Fast startup and good DX |
 
-目录结构
+## Directory Layout
+
+```text
 frontend/
 ├── src/
 │   ├── components/
@@ -129,22 +142,20 @@ frontend/
 ├── public/
 ├── package.json
 └── vite.config.ts
+```
 
-模块边界
+## Module Boundaries
 
-Frontend 负责：
+Frontend is responsible for:
 
-页面展示
-用户交互
-API 调用
-前端状态管理
+- page presentation
+- user interaction
+- API calls
+- frontend state management
 
-Frontend 不负责：
+Frontend is not responsible for:
 
-AI 推理逻辑
-情绪分析算法
-RAG 检索逻辑
-数据库存储
-
-
-
+- AI inference logic
+- sentiment analysis algorithms
+- RAG retrieval logic
+- database storage

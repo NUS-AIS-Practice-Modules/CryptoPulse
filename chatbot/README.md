@@ -1,39 +1,39 @@
-# CryptoPulse Chatbot 模块
+# CryptoPulse Chatbot Module
 
-**负责人**：Wei Yitao（E1458658）  
-**模块角色**：系统集成层 — 将 NER、情感分析、RAG、LLM 组合成统一的 REST API 服务
+**Owner**: Wei Yitao (E1458658)  
+**Module role**: System integration layer that combines NER, sentiment analysis, RAG, and LLM generation into a unified REST API service
 
 ---
 
-## 模块架构
+## Module Architecture
 
-```
-用户消息
+```text
+User message
     ↓
 POST /api/chat
     ↓
-1. NER 实体提取      → 识别 "Bitcoin" → BTC（规范化为 ticker）
-2. 情感缓存查询      → lookup("BTC") → Bullish 60% / Bearish 25% / Neutral 15%
-3. RAG 知识检索      → 实体增强查询 → 背景知识文本
-4. Prompt 组装       → 系统角色 + RAG上下文 + 情感数据 + 对话历史 + 用户消息
-5. LLM 生成回复      → OpenAI gpt-4o-mini（或 LoRA generate_response）
+1. NER entity extraction  → identify "Bitcoin" → BTC (normalized to ticker)
+2. Sentiment cache lookup → lookup("BTC") → Bullish 60% / Bearish 25% / Neutral 15%
+3. RAG knowledge retrieval → entity-augmented query → background knowledge text
+4. Prompt assembly        → system role + RAG context + sentiment data + history + user message
+5. LLM response generation → OpenAI gpt-4o-mini (or LoRA generate_response)
     ↓
-返回 reply + sentiment + entities + sources
+Return reply + sentiment + entities + sources
 ```
 
-### 依赖关系
+### Dependencies
 
-```
-Frontend ──HTTP──▶ Chatbot ──Python 函数──▶ RAG（知识检索）
-                           ──读文件──▶ LoRA 产出的 sentiment_summary.json
-                           ──内置──▶ NER（LLM-based 实体提取）
+```text
+Frontend ──HTTP──▶ Chatbot ──Python functions──▶ RAG (knowledge retrieval)
+                           ──file read────────▶ LoRA-produced sentiment_summary.json
+                           ──built-in────────▶ NER (LLM-based entity extraction)
 ```
 
 ---
 
-## 快速启动
+## Quick Start
 
-### 1. 环境准备（首次）
+### 1. Environment Setup (First Time)
 
 ```bash
 cd chatbot
@@ -43,38 +43,41 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-### 2. 启动服务（Mock 模式，无需 API Key）
+### 2. Start the Service (Mock Mode, No API Key Required)
 
 ```bash
 USE_MOCK=true .venv/bin/uvicorn src.app:app --reload --port 8000
 ```
 
-启动成功标志：
-```
+Successful startup looks like:
+
+```text
 INFO  Loading sentiment cache: 6 cryptos from ./data/sentiment_summary.json
 INFO  Uvicorn running on http://0.0.0.0:8000
 ```
 
-### 3. 启动服务（真实模式）
+### 3. Start the Service (Real Mode)
 
-在 `.env` 中填入真实 key：
-```
+Set the real key in `.env`:
+
+```env
 USE_MOCK=false
-OPENAI_API_KEY=sk-你的key
+OPENAI_API_KEY=sk-your-key
 ```
 
-然后：
+Then run:
+
 ```bash
 .venv/bin/uvicorn src.app:app --reload --port 8000
 ```
 
 ---
 
-## API 端点
+## API Endpoints
 
 ### `GET /api/health`
 
-检查各子模块状态。
+Checks the status of each submodule.
 
 ```bash
 curl http://localhost:8000/api/health
@@ -95,9 +98,10 @@ curl http://localhost:8000/api/health
 
 ### `POST /api/chat`
 
-主对话接口。接收用户消息，经过完整 NLP pipeline 后返回回复。
+Main conversation endpoint. It receives a user message, runs the full NLP pipeline, and returns the response.
 
-**请求：**
+**Request:**
+
 ```bash
 curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
@@ -111,14 +115,15 @@ curl -X POST http://localhost:8000/api/chat \
   }'
 ```
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |------|------|------|
-| `message` | string（必填） | 用户输入的问题 |
-| `conversation_id` | string（可选） | 对话 ID，不传则自动生成，用于多轮对话 |
-| `options.include_sentiment` | bool | 是否在响应中包含情感数据，默认 true |
-| `options.include_sources` | bool | 是否包含 RAG 来源，默认 true |
+| `message` | string (required) | User question |
+| `conversation_id` | string (optional) | Conversation ID; generated automatically if omitted for multi-turn chat |
+| `options.include_sentiment` | bool | Whether to include sentiment data in the response, default `true` |
+| `options.include_sources` | bool | Whether to include RAG sources, default `true` |
 
-**响应：**
+**Response:**
+
 ```json
 {
   "reply": "Based on current market analysis, Bitcoin (BTC) sentiment is bullish...",
@@ -139,13 +144,14 @@ curl -X POST http://localhost:8000/api/chat \
 }
 ```
 
-**多轮对话示例：**
+**Multi-turn conversation example:**
+
 ```bash
-# 第一轮
+# Turn 1
 curl -X POST http://localhost:8000/api/chat \
   -d '{"message": "Tell me about Bitcoin", "conversation_id": "my-session"}'
 
-# 第二轮（chatbot 记住上一轮，最多保留 5 轮历史）
+# Turn 2 (Chatbot remembers prior context, keeps up to 5 turns)
 curl -X POST http://localhost:8000/api/chat \
   -d '{"message": "What about Ethereum?", "conversation_id": "my-session"}'
 ```
@@ -154,15 +160,15 @@ curl -X POST http://localhost:8000/api/chat \
 
 ### `GET /api/sentiment/summary`
 
-返回指定币种的历史情感趋势，供前端仪表盘使用。
+Returns historical sentiment trends for a specified crypto, used by the frontend dashboard.
 
 ```bash
 curl "http://localhost:8000/api/sentiment/summary?crypto=BTC&period=7d"
 ```
 
-| 参数 | 可选值 |
+| Parameter | Allowed values |
 |------|--------|
-| `crypto` | BTC, ETH, SOL 等 ticker |
+| `crypto` | BTC, ETH, SOL, and other tickers |
 | `period` | `7d` / `30d` / `90d` |
 
 ```json
@@ -181,23 +187,24 @@ curl "http://localhost:8000/api/sentiment/summary?crypto=BTC&period=7d"
 
 ---
 
-## 内部 Pipeline 详解
+## Internal Pipeline Details
 
-### NER 实体提取
+### NER Entity Extraction
 
-- **Mock 模式**：关键词匹配（bitcoin→BTC, ethereum→ETH 等）
-- **真实模式**：调用 OpenAI gpt-4o-mini，JSON mode，规范化为 ticker symbol
-- CRYPTO 类型实体用于情感缓存查询和 RAG 查询增强
+- **Mock mode**: keyword matching (`bitcoin` → `BTC`, `ethereum` → `ETH`, and so on)
+- **Real mode**: calls OpenAI `gpt-4o-mini` in JSON mode and normalizes to ticker symbols
+- `CRYPTO` entities are used for sentiment cache lookups and RAG query augmentation
 
-### 情感数据来源
+### Sentiment Data Source
 
-**不做实时推理**。LoRA 团队离线处理社交媒体评论后产出：
+**No real-time sentiment inference runs here.** The LoRA team processes social media comments offline and outputs:
 
-```
+```text
 chatbot/data/sentiment_summary.json
 ```
 
-格式：
+Format:
+
 ```json
 {
   "BTC": {"overall": "Bullish", "bullish": 0.60, "bearish": 0.25, "neutral": 0.15, "sample_count": 15234},
@@ -205,68 +212,69 @@ chatbot/data/sentiment_summary.json
 }
 ```
 
-Chatbot 启动时加载到内存，查询为 O(1)。**LoRA 团队负责更新此文件。**
+Chatbot loads this file into memory at startup, so lookups are `O(1)`. **The LoRA team owns updates to this file.**
 
-### RAG 检索
+### RAG Retrieval
 
-- 查询 = 用户原始消息 + NER 提取的 ticker（如 "Bitcoin outlook BTC"）
-- 调用 `rag/src/retrieval.py` 的 `get_context_for_llm()` 函数
-- Mock 模式返回固定的加密货币背景知识段落
+- Query = raw user message + ticker extracted by NER, for example `"Bitcoin outlook BTC"`
+- Calls `get_context_for_llm()` from `rag/src/retrieval.py`
+- Mock mode returns a fixed crypto background paragraph
 
-### LLM 生成
+### LLM Generation
 
-| `LLM_BACKEND` | 调用方式 |
+| `LLM_BACKEND` | Call path |
 |--------------|---------|
-| `openai`（默认） | OpenAI ChatCompletion API |
-| `lora` | `lora/src/inference.py` 的 `generate_response()` |
+| `openai` (default) | OpenAI ChatCompletion API |
+| `lora` | `generate_response()` from `lora/src/inference.py` |
 
 ---
 
-## 环境变量说明
+## Environment Variables
 
-| 变量 | 默认值 | 说明 |
+| Variable | Default | Description |
 |------|--------|------|
-| `USE_MOCK` | `true` | true = 全部用 mock 数据，无需 API key |
-| `NER_BACKEND` | `llm` | `llm`=OpenAI NER，`model`=BERTweet（待实现） |
-| `LLM_BACKEND` | `openai` | `openai` 或 `lora` |
-| `OPENAI_API_KEY` | — | OpenAI API key（USE_MOCK=false 时必填） |
-| `OPENAI_NER_MODEL` | `gpt-4o-mini` | NER 用的模型 |
-| `OPENAI_CHAT_MODEL` | `gpt-4o-mini` | 对话生成用的模型 |
-| `MAX_HISTORY_TURNS` | `5` | 传给 LLM 的最大历史轮数 |
-| `SENTIMENT_DATA_PATH` | `./data/sentiment_summary.json` | LoRA 团队产出的情感数据路径 |
+| `USE_MOCK` | `true` | `true` = use mock data everywhere, no API key required |
+| `NER_BACKEND` | `llm` | `llm` = OpenAI NER, `model` = BERTweet (not implemented yet) |
+| `LLM_BACKEND` | `openai` | `openai` or `lora` |
+| `OPENAI_API_KEY` | — | OpenAI API key, required when `USE_MOCK=false` |
+| `OPENAI_NER_MODEL` | `gpt-4o-mini` | Model used for NER |
+| `OPENAI_CHAT_MODEL` | `gpt-4o-mini` | Model used for chat generation |
+| `MAX_HISTORY_TURNS` | `5` | Maximum history turns passed to the LLM |
+| `SENTIMENT_DATA_PATH` | `./data/sentiment_summary.json` | Path to the sentiment data produced by the LoRA team |
 
 ---
 
-## 运行测试
+## Run Tests
 
 ```bash
 USE_MOCK=true .venv/bin/pytest tests/ -v
 ```
 
-预期输出：17 passed
+Expected output: `17 passed`
 
 ---
 
-## 与其他模块的对接
+## Integration With Other Modules
 
-### Chatbot 需要 LoRA 团队提供
+### What Chatbot Needs From the LoRA Team
 
-`chatbot/data/sentiment_summary.json`，格式见上方「情感数据来源」。
+`chatbot/data/sentiment_summary.json`, in the format shown above under **Sentiment Data Source**.
 
-### Chatbot 需要 RAG 团队提供
+### What Chatbot Needs From the RAG Team
 
-`rag/src/retrieval.py` 中的函数（接口已在 `docs/INTERFACES.md` 定义）：
+Functions in `rag/src/retrieval.py` as defined in `docs/INTERFACES.md`:
+
 ```python
 def get_context_for_llm(query: str, max_tokens: int = 2000, top_k: int = 5) -> str: ...
 def retrieve(query: str, top_k: int = 5, source_filter: list[str] | None = None) -> RetrievalResult: ...
 ```
 
-### Frontend 团队调用 Chatbot
+### How the Frontend Team Calls Chatbot
 
-所有接口 schema 见 `docs/INTERFACES.md`。Chatbot API 地址：`http://localhost:8000`。
+All interface schemas are defined in `docs/INTERFACES.md`. Chatbot API base URL: `http://localhost:8000`.
 
 ---
 
-## 交互式文档
+## Interactive Docs
 
-服务启动后访问 `http://localhost:8000/docs`，可在浏览器中直接测试所有接口。
+After the service starts, open `http://localhost:8000/docs` to test all endpoints in the browser.

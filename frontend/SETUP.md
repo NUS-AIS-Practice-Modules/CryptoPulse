@@ -1,63 +1,62 @@
-# Frontend 环境搭建
+# Frontend Setup
 
-## 前置要求
+## Prerequisites
 
 - Node.js >= 18
 - npm >= 9
 
-## 安装步骤
+## Installation
 
 ```bash
 cd frontend
 npm install
 ```
 
-## 本地开发
+## Local Development
 
 ```bash
 npm run dev
 ```
 
-默认地址：`http://localhost:5173`
+Default address: `http://localhost:5173`
 
-## 生产构建
+## Production Build
 
 ```bash
 npm run build
 ```
 
-## 环境变量
+## Environment Variables
 
-创建 `.env.local`：
+Create `.env.local`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 VITE_USE_MOCK=true
 ```
 
-说明：
+Notes:
 
-- `VITE_API_BASE_URL`：后端 API 地址
-- `VITE_USE_MOCK`：是否使用 Mock 数据
+- `VITE_API_BASE_URL`: backend API base URL
+- `VITE_USE_MOCK`: whether to use mock data
 
-## Mock 开发模式
+## Mock Development Mode
 
-后端未完成时使用本地 Mock 数据：
+When the backend is not ready, use local mock data for:
 
 - `/api/chat`
 - `/api/sentiment/summary`
 - `/api/health`
 
-## 联调步骤
+## Integration Steps
 
-1. 启动后端 API 服务
-2. 修改 `.env.local` 中 `VITE_USE_MOCK=false`
-3. 启动前端：`npm run dev`
-4. 测试聊天功能与 Dashboard 页面
+1. Start the backend API service
+2. Set `VITE_USE_MOCK=false` in `.env.local`
+3. Start the frontend: `npm run dev`
+4. Test the chat flow and the Dashboard page
 
-## 当前限制
+## Current Limitations
 
-- 文件上传接口待后端完成
-- 历史会话功能待后端支持
-- Streaming 输出后续可扩展为 SSE 或 WebSocket
-
+- File upload endpoints still depend on backend support
+- Historical session support still depends on backend support
+- Streaming output can later be extended with SSE or WebSocket

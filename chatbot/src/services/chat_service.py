@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from src.config import settings
 from src.ner.ner_service import extract_entities
 from src.services.sentiment_cache import sentiment_cache
+from src.services.intent_service import classify_intent, Intent
 from src.memory.conversation_store import conversation_store
 from src.prompts.chat_prompt import build_messages
 
@@ -72,40 +73,64 @@ async def handle_chat(
     include_sentiment: bool = True,
     include_sources: bool = True,
 ) -> dict:
-    # Step 1: NER
+    # Step 1: Intent classification
+    if settings.use_mock:
+        from datetime import date, timedelta
+        today = date.today()
+        intent = Intent(needs_sentiment=True, needs_rag=True, sentiment_scope="global",
+                        date_range={"start": (today - timedelta(days=6)).isoformat(), "end": today.isoformat()})
+    else:
+        if settings.llm_backend == "lora":
+            _configure_lora_environment()
+        intent = classify_intent(message, settings.openai_api_key, settings.openai_ner_model)
+    logger.info("Intent: %s", intent)
+
+    # Step 2: NER
     entities = extract_entities(message)
     crypto_entities = [e for e in entities if e.type == "CRYPTO"]
+    logger.info("NER: %s", [(e.text, e.type) for e in entities])
 
-    # Step 2: Sentiment cache lookup (read-only, no real-time inference)
+    # Step 3: Sentiment lookup (only when needed)
     sentiment: dict | None = None
-    if include_sentiment and not settings.use_mock and settings.llm_backend == "lora":
-        import sys, os
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-        _configure_lora_environment()
-        from lora.src.inference import predict_sentiment  # type: ignore
+    if include_sentiment and intent.needs_sentiment:
+        if not settings.use_mock and settings.llm_backend == "lora":
+            import sys, os
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+            _configure_lora_environment()
+            from lora.src.inference import predict_sentiment  # type: ignore
+            result = predict_sentiment(message)
+            sentiment = {
+                "overall": result.label,
+                "confidence": result.confidence,
+                "bullish": result.scores.get("bullish", 0.0),
+                "bearish": result.scores.get("bearish", 0.0),
+                "neutral": result.scores.get("neutral", 0.0),
+            }
+        elif intent.sentiment_scope == "coin" and crypto_entities:
+            dr = intent.date_range or {}
+            sentiment = sentiment_cache.lookup_coin_date_range(
+                crypto_entities[0].text,
+                dr.get("start", "2026-05-01"),
+                dr.get("end", "2026-05-07"),
+            )
+        else:
+            dr = intent.date_range or {}
+            sentiment = sentiment_cache.lookup_date_range(
+                dr.get("start", "2026-05-01"), dr.get("end", "2026-05-07")
+            )
 
-        result = predict_sentiment(message)
-        sentiment = {
-            "overall": result.label,
-            "confidence": result.confidence,
-            "bullish": result.scores.get("bullish", 0.0),
-            "bearish": result.scores.get("bearish", 0.0),
-            "neutral": result.scores.get("neutral", 0.0),
-        }
-    elif include_sentiment and crypto_entities:
-        # Use the first detected crypto for sentiment lookup
-        sentiment = sentiment_cache.lookup(crypto_entities[0].text)
+    # Step 4: RAG retrieval (only when needed)
+    rag_context, sources = "", []
+    if intent.needs_rag:
+        entity_texts = [e.text for e in entities]
+        rag_query = f"{message} {' '.join(entity_texts)}" if entity_texts else message
+        rag_context, sources = _get_rag_context(rag_query)
 
-    # Step 3: RAG retrieval with entity-enhanced query
-    entity_texts = [e.text for e in crypto_entities]
-    rag_query = f"{message} {' '.join(entity_texts)}" if entity_texts else message
-    rag_context, sources = _get_rag_context(rag_query)
-
-    # Step 4: Load conversation history
+    # Step 5: Load conversation history
     history = conversation_store.get_recent_messages(conversation_id, settings.max_history_turns)
 
-    # Step 5: Build prompt and generate reply
-    messages_list = build_messages(message, rag_context, sentiment, entities, history)
+    # Step 6: Build prompt and generate reply
+    messages_list = build_messages(message, rag_context, sentiment, entities, history, intent)
     reply = _generate_reply(messages_list)
 
     # Step 6: Persist turn

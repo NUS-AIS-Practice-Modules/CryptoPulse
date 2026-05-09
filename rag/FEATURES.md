@@ -1,66 +1,65 @@
-# RAG 模块功能清单
+# RAG Feature List
 
-## 规则
+## Rules
 
-- 一次只做一个功能
-- 验证通过才算完成
-- 检索质量必须有量化指标
-- 接口签名必须与 Harness 契约一致
+- Work on one feature at a time
+- A feature is complete only after verification passes
+- Retrieval quality must be backed by quantitative metrics
+- Interface signatures must stay consistent with the harness contract
 
-## 功能列表
+## Features
 
-### RAG-001: 语料采集与标准化（priority: 1）
+### RAG-001: Corpus Collection and Normalization (priority: 1)
 
-- **描述**：收集白皮书、监管文件、市场研究报告、历史案例、新闻与社媒内容，统一转换为可索引的标准文档结构。
-- **验证标准**:
-  - [ ] 覆盖六类来源
-  - [ ] 每条文档包含 `title/content/source/url/published_at/metadata`
-  - [ ] `metadata` 至少包含固定字段集
-  - [ ] 原始输入转换为统一文本格式
-  - [ ] 去噪与去重完成
+- **Description**: Collect whitepapers, regulatory files, market research reports, historical cases, news, and social-media content, and convert them into a standardized document format that can be indexed.
+- **Verification**:
+  - [ ] Cover all six source categories
+  - [ ] Every document includes `title/content/source/url/published_at/metadata`
+  - [ ] `metadata` contains the required fixed field set
+  - [ ] Raw inputs are converted into a unified text format
+  - [ ] Noise removal and deduplication are complete
 
-### RAG-002: 分块、元数据建模与索引入库（priority: 2）
+### RAG-002: Chunking, Metadata Modeling, and Index Ingestion (priority: 2)
 
-- **描述**：执行分块、embedding 和索引入库。
-- **验证标准**:
-  - [ ] 分块逻辑可运行
-  - [ ] `BAAI/bge-m3` 可正常加载
-  - [ ] Milvus collection 创建成功
-  - [ ] BM25 索引构建成功
-  - [ ] `index_documents()` 返回正确索引数
+- **Description**: Run chunking, embeddings, and index ingestion.
+- **Verification**:
+  - [ ] Chunking logic runs successfully
+  - [ ] `BAAI/bge-m3` loads correctly
+  - [ ] Milvus collection creation succeeds
+  - [ ] BM25 index creation succeeds
+  - [ ] `index_documents()` returns the correct indexed count
 
-### RAG-003: Dense Retrieval 实现（priority: 3）
+### RAG-003: Dense Retrieval Implementation (priority: 3)
 
-- **描述**：实现基于向量索引的语义检索。
-- **验证标准**:
-  - [ ] 基础检索问题返回相关结果
-  - [ ] `FTX collapse` 类查询 Top-5 命中案例复盘或新闻
-  - [ ] raw dense retrieval 延迟 `< 1.5s`
-  - [ ] 返回字段齐全
+- **Description**: Implement semantic retrieval on top of the vector index.
+- **Verification**:
+  - [ ] Basic queries return relevant results
+  - [ ] Queries like `FTX collapse` hit case-study or news results in Top-5
+  - [ ] Raw dense retrieval latency stays below `< 1.5s`
+  - [ ] Returned fields are complete
 
-### RAG-004: BM25 检索与混合融合（priority: 4）
+### RAG-004: BM25 Retrieval and Hybrid Fusion (priority: 4)
 
-- **描述**：实现 BM25 和 RRF 融合。
-- **验证标准**:
-  - [ ] BM25 可独立运行
+- **Description**: Implement BM25 and RRF fusion.
+- **Verification**:
+  - [ ] BM25 can run independently
   - [ ] `Recall@5 >= 0.75`
-  - [ ] `source_filter` 对六类来源生效
+  - [ ] `source_filter` works for all six source categories
 
-### RAG-005: Rerank 与 Chatbot 接口封装（priority: 5）
+### RAG-005: Rerank and Chatbot Interface Wrapper (priority: 5)
 
-- **描述**：加入 reranker 并封装对外接口。
-- **验证标准**:
-  - [ ] `retrieve()` 签名与契约一致
-  - [ ] `get_context_for_llm()` 签名与契约一致
-  - [ ] 返回可直接拼入 prompt 的上下文
-  - [ ] `get_context_for_llm()` 延迟 `< 3s`
+- **Description**: Add the reranker and package the external interface.
+- **Verification**:
+  - [ ] `retrieve()` signature matches the contract
+  - [ ] `get_context_for_llm()` signature matches the contract
+  - [ ] Returned context can be inserted directly into prompts
+  - [ ] `get_context_for_llm()` latency stays below `< 3s`
 
-### RAG-006: 定时刷新与评估优化（priority: 6）
+### RAG-006: Scheduled Refresh and Evaluation Optimization (priority: 6)
 
-- **描述**：实现新闻与社媒定时刷新，并跑 benchmark / RAGAS 评估。
-- **验证标准**:
-  - [ ] 定时刷新 job 可运行
-  - [ ] 输出 Recall@K、延迟、Faithfulness 等指标
+- **Description**: Implement scheduled refresh for news and social-media data, and run benchmark / RAGAS evaluation.
+- **Verification**:
+  - [ ] Refresh job runs successfully
+  - [ ] Outputs Recall@K, latency, Faithfulness, and related metrics
   - [ ] `Generation Faithfulness >= 85%`
-  - [ ] 刷新失败不破坏既有索引
-
+  - [ ] Refresh failures do not corrupt existing indexes

@@ -77,3 +77,29 @@ Reason:
 - Chatbot must call real RAG and real AutoDL LoRA inside one service process for the demo
 - The current local environment blocked dependency installation into `chatbot/.venv`, but `rag/.venv` already contains the verified RAG runtime packages
 - Using a temporary `PYTHONPATH` bridge is explicit, reversible, and does not write dependencies into `base`
+
+## 2026-05-08 - LoRA-IFT Intent Routing
+
+- Use `ift-lora` for Chatbot intent classification when `LLM_BACKEND=lora`
+- Keep `sentiment-lora` dedicated to sentiment classification
+- Route Chatbot through the LoRA Python wrapper instead of calling the AutoDL HTTP endpoint directly
+- Preserve OpenAI intent classification for `LLM_BACKEND=openai`
+
+Reason:
+
+- Intent classification is a structured routing task and should share the same LoRA integration boundary as response generation
+- Reusing the LoRA wrapper keeps Chatbot independent from AutoDL transport details
+- Keeping OpenAI and LoRA backends explicit avoids coupling intent routing to the NER model configuration
+
+## 2026-05-08 - LoRA-IFT NER Primary Path
+
+- Use `ift-lora` for Chatbot NER when `NER_BACKEND=lora`
+- Keep OpenAI NER as the first fallback
+- Keep local keyword rules as the final fallback for demo-critical entities such as `SEC`, `CFTC`, `FTX Collapse`, `ETF Approval`, `Binance`, `Coinbase`, and `Kraken`
+- Preserve `sentiment-lora` exclusively for sentiment classification
+
+Reason:
+
+- NER is a structured extraction task and can share the existing LoRA inference boundary with intent routing
+- Routing through the LoRA Python wrapper keeps Chatbot independent from AutoDL HTTP details
+- OpenAI remains useful as a reliability fallback without being required for the primary real LoRA demo path

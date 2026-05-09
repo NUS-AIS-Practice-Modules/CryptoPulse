@@ -2,8 +2,9 @@ import type { ChatReply, DashboardSummary, HealthStatus } from "../types";
 
 export const mockDashboardSummary: DashboardSummary = {
   totalAnalyses: 284,
-  activeTopics: 12,
-  health: "Healthy",
+  overallSentiment: "Bullish",
+  bullishRatio: "56.0%",
+  trendDirection: "Rising",
   lastUpdated: "2026-04-22 10:30",
   trend: [
     { date: "04-16", bullish: 28, bearish: 18, neutral: 12 },
@@ -19,7 +20,6 @@ export const mockDashboardSummary: DashboardSummary = {
     { name: "Bearish", value: 22 },
     { name: "Neutral", value: 22 }
   ],
-  topTopics: ["BTC ETF flows", "ETH staking", "Macro rates", "Solana activity"]
 };
 
 export const mockHealthStatus: HealthStatus = {

@@ -39,12 +39,12 @@ export interface SentimentDistribution {
 
 export interface DashboardSummary {
   totalAnalyses: number;
-  activeTopics: number;
-  health: "Healthy" | "Warning" | "Offline";
+  overallSentiment: "Bullish" | "Bearish" | "Neutral";
+  bullishRatio: string;
+  trendDirection: "Rising" | "Falling" | "Stable";
   lastUpdated: string;
   trend: TrendPoint[];
   distribution: SentimentDistribution[];
-  topTopics: string[];
 }
 
 export interface HealthStatus {

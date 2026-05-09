@@ -1,12 +1,12 @@
-# RAG 模块环境搭建
+# RAG Module Setup
 
-## 前置要求
+## Prerequisites
 
 - Python >= 3.10
 - pip >= 23
-- Docker >= 24（用于本地启动 `Milvus standalone`）
+- Docker >= 24 (used to run local `Milvus standalone`)
 
-## 安装步骤
+## Installation
 
 ```bash
 cd rag
@@ -20,14 +20,14 @@ Use the module-local `.venv`; do not install RAG dependencies into the conda
 PyTorch runtime without writing packages into `base`; packages installed by the
 command above are written under `rag/.venv`.
 
-## 启动本地 Milvus
+## Start Local Milvus
 
 ```bash
 wget https://github.com/milvus-io/milvus/releases/download/v2.6.14/milvus-standalone-docker-compose.yml -O docker-compose.yml
 sudo docker compose up -d
 ```
 
-检查容器状态：
+Check container status:
 
 ```bash
 docker ps
@@ -39,7 +39,7 @@ Expected standalone ports:
 - Milvus health/API: `127.0.0.1:9091`
 - MinIO console/API: `127.0.0.1:9000-9001`
 
-## 环境变量
+## Environment Variables
 
 ```bash
 cp .env.example .env
@@ -67,11 +67,11 @@ USE_MOCK_EMBEDDINGS=false
 MOCK_EMBEDDING_DIMENSION=384
 ```
 
-## 运行命令
+## Commands
 
 ```bash
 python -m unittest discover -s tests
-python -m src.ingestion.download_web_pdfs --links-docx /path/to/web-links.docx --output-dir data/raw/web_pdfs --manifest data/raw/web_pdf_manifest.jsonl
+python -m src.ingestion.download_web_pdfs --links-docx /path/to/web-links.docx --output-dir data/raw/news --manifest data/raw/web_pdf_manifest.jsonl
 python -m src.ingestion.pdf_importer --manifest data/raw/combined_pdf_manifest.jsonl --output data/processed/normalized_documents.jsonl
 python -m src.ingestion.normalize_corpus --input data/raw/documents.json --output data/processed/normalized_documents.jsonl
 python -m src.indexing.build_index --input data/processed/normalized_documents.jsonl
@@ -133,8 +133,8 @@ OCR when extracted text is too short for indexing.
 3. save the real report PDF when a download/full-report link exists
 4. fall back to browser-printed PDF only when no real report PDF is exposed
 
-## 数据存放
+## Data Locations
 
-- 原始语料：`data/raw/`
-- 标准化与分块产物：`data/processed/`
-- 本地向量存储目录：`vectordb/`
+- Raw corpus: `data/raw/{whitepaper,case_study,regulatory,market_data,news}/`
+- Normalized and chunked artifacts: `data/processed/`
+- Local vector storage: `vectordb/`

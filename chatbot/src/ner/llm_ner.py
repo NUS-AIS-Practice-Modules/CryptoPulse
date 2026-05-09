@@ -45,32 +45,96 @@ def _find_offset(text: str, mention: str) -> tuple[int, int]:
     return idx, idx + len(mention)
 
 
+def _normalize_entity_text(normalized: str, original: str, entity_type: str) -> str:
+    if entity_type == "EXCHANGE":
+        original_key = original.strip().lower()
+        normalized_key = normalized.strip().lower()
+        exchanges = {
+            "binance": "Binance",
+            "bnb": "Binance",
+            "coinbase": "Coinbase",
+            "coin": "Coinbase",
+            "kraken": "Kraken",
+            "krk": "Kraken",
+            "okx": "OKX",
+        }
+        return exchanges.get(original_key) or exchanges.get(normalized_key) or normalized
+    if entity_type == "EVENT":
+        original_key = original.strip().lower()
+        normalized_key = normalized.strip().lower()
+        events = {
+            "ftx": "FTX Collapse",
+            "ftx collapse": "FTX Collapse",
+            "etf": "ETF Approval",
+            "bitcoin etf": "ETF Approval",
+            "etf approval": "ETF Approval",
+        }
+        return events.get(original_key) or events.get(normalized_key) or normalized
+    return normalized
+
+
+def entities_from_payload(data: dict, text: str) -> list[Entity]:
+    entities: list[Entity] = []
+    seen: set[tuple[str, str]] = set()
+    for item in data.get("entities", []):
+        normalized = str(item.get("normalized", "")).strip()
+        original = str(item.get("original_mention", normalized)).strip()
+        entity_type = str(item.get("type", "CRYPTO")).strip().upper()
+        if not normalized:
+            continue
+        normalized_text = _normalize_entity_text(normalized, original, entity_type)
+        key = (normalized_text.lower(), entity_type)
+        if key in seen:
+            continue
+        start, end = _find_offset(text, original)
+        try:
+            confidence = float(item.get("confidence", 0.9))
+        except (TypeError, ValueError):
+            confidence = 0.9
+        entities.append(Entity(
+            text=normalized_text,
+            type=entity_type,
+            start=start,
+            end=end,
+            confidence=max(0.0, min(1.0, confidence)),
+        ))
+        seen.add(key)
+    return entities
+
+
 def _fallback_entities(text: str) -> list[Entity]:
     known = {
-        "bitcoin": "BTC", "btc": "BTC",
-        "ethereum": "ETH", "eth": "ETH",
-        "solana": "SOL", "sol": "SOL",
-        "binance coin": "BNB", "bnb": "BNB",
-        "ripple": "XRP", "xrp": "XRP",
-        "dogecoin": "DOGE", "doge": "DOGE",
+        "bitcoin": ("BTC", "CRYPTO"), "btc": ("BTC", "CRYPTO"),
+        "ethereum": ("ETH", "CRYPTO"), "eth": ("ETH", "CRYPTO"),
+        "solana": ("SOL", "CRYPTO"), "sol": ("SOL", "CRYPTO"),
+        "binance coin": ("BNB", "CRYPTO"), "bnb": ("BNB", "CRYPTO"),
+        "ripple": ("XRP", "CRYPTO"), "xrp": ("XRP", "CRYPTO"),
+        "dogecoin": ("DOGE", "CRYPTO"), "doge": ("DOGE", "CRYPTO"),
+        "binance": ("Binance", "EXCHANGE"),
+        "coinbase": ("Coinbase", "EXCHANGE"),
+        "kraken": ("Kraken", "EXCHANGE"),
+        "sec": ("SEC", "REGULATORY_BODY"),
+        "cftc": ("CFTC", "REGULATORY_BODY"),
+        "ftx": ("FTX Collapse", "EVENT"),
+        "etf approval": ("ETF Approval", "EVENT"),
     }
     lower = text.lower()
     seen: set[str] = set()
     entities: list[Entity] = []
-    for mention, ticker in known.items():
-        if ticker in seen:
+    for mention, (normalized, entity_type) in known.items():
+        if normalized in seen:
             continue
         start = lower.find(mention)
         if start == -1:
             continue
         entities.append(Entity(
-            text=ticker,
-            type="CRYPTO",
+            text=normalized,
+            type=entity_type,
             start=start,
             end=start + len(mention),
             confidence=0.75,
         ))
-        seen.add(ticker)
+        seen.add(normalized)
     return entities
 
 
@@ -96,19 +160,7 @@ def extract_entities(text: str) -> list[Entity]:
 
     try:
         data = json.loads(raw)
-        entities = []
-        for item in data.get("entities", []):
-            normalized = item.get("normalized", "")
-            original = item.get("original_mention", normalized)
-            start, end = _find_offset(text, original)
-            entities.append(Entity(
-                text=normalized,
-                type=item.get("type", "CRYPTO"),
-                start=start,
-                end=end,
-                confidence=float(item.get("confidence", 0.9)),
-            ))
-        return entities
+        return entities_from_payload(data, text)
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         logger.error("NER JSON parse failed: %s | raw=%s", e, raw[:200])
         return _fallback_entities(text)

@@ -192,6 +192,283 @@ def _sentiment_from_text(text: str) -> SentimentResult:
     return _lexical_sentiment(content)
 
 
+_INTENT_FALLBACK = {
+    "needs_sentiment": True,
+    "needs_rag": True,
+    "sentiment_scope": "global",
+    "sentiment_days": 7,
+    "date_range": None,
+}
+
+_INTENT_SYSTEM_PROMPT = """You are a query router for a cryptocurrency sentiment chatbot.
+Return exactly one JSON object for the current user message only, with these keys:
+- needs_sentiment: boolean
+- needs_rag: boolean
+- sentiment_scope: "global", "coin", or null
+- sentiment_days: integer or null
+- date_range: {"start":"YYYY-MM-DD","end":"YYYY-MM-DD"} or null
+Rules:
+- Technology or explanation questions need RAG and do not need sentiment.
+- Greetings need neither sentiment nor RAG.
+- Coin sentiment questions use sentiment_scope "coin".
+Examples:
+User: What is Bitcoin sentiment this week?
+Assistant: {"needs_sentiment":true,"needs_rag":false,"sentiment_scope":"coin","sentiment_days":7,"date_range":null}
+User: Tell me about Ethereum technology
+Assistant: {"needs_sentiment":false,"needs_rag":true,"sentiment_scope":null,"sentiment_days":null,"date_range":null}
+User: Hello
+Assistant: {"needs_sentiment":false,"needs_rag":false,"sentiment_scope":null,"sentiment_days":null,"date_range":null}
+Do not include markdown, explanation, or additional examples."""
+
+_NER_SYSTEM_PROMPT = """Extract cryptocurrency-related named entities from the current user message.
+Return exactly one JSON object with this shape:
+{"entities":[{"normalized":"BTC","original_mention":"Bitcoin","type":"CRYPTO","confidence":0.95}]}
+Entity types: CRYPTO, EXCHANGE, PERSON, REGULATORY_BODY, EVENT.
+Rules:
+- Normalize crypto entities to ticker symbols, for example Bitcoin -> BTC and Ethereum -> ETH.
+- Normalize exchanges to canonical names, for example Binance, Coinbase, Kraken, OKX.
+- Normalize regulators to official abbreviations, for example SEC and CFTC.
+- Use short event labels such as FTX Collapse or ETF Approval.
+- If no entities are found, return {"entities":[]}.
+Do not include markdown, explanation, or additional examples."""
+
+
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    content = text.strip()
+    if content.startswith("```"):
+        content = re.sub(r"^```(?:json)?\s*", "", content, flags=re.IGNORECASE)
+        content = re.sub(r"\s*```$", "", content)
+
+    decoder = json.JSONDecoder()
+    try:
+        payload, _ = decoder.raw_decode(content)
+    except json.JSONDecodeError:
+        payload = None
+        for match in re.finditer(r"\{", content):
+            try:
+                payload, _ = decoder.raw_decode(content[match.start():])
+                break
+            except json.JSONDecodeError:
+                continue
+    return payload if isinstance(payload, dict) else None
+
+
+def _coerce_key_value(raw: str) -> Any:
+    value = raw.strip().strip(",")
+    if value.startswith("{"):
+        nested = _extract_json_object(value)
+        if nested is not None:
+            return nested
+
+    unquoted = value.strip().strip('"').strip("'")
+    normalized = unquoted.lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    if normalized in {"null", "none", ""}:
+        return None
+    try:
+        return int(unquoted)
+    except ValueError:
+        return unquoted
+
+
+def _extract_key_value_object(text: str) -> dict[str, Any] | None:
+    content = text.strip()
+    keys = ["needs_sentiment", "needs_rag", "sentiment_scope", "sentiment_days", "date_range"]
+    pattern = re.compile(r"\b(" + "|".join(keys) + r")\s*:")
+    matches = list(pattern.finditer(content))
+    if not matches:
+        return None
+
+    payload: dict[str, Any] = {}
+    for index, match in enumerate(matches):
+        key = match.group(1)
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(content)
+        payload[key] = _coerce_key_value(content[match.end():end])
+    return payload
+
+
+def _normalize_nullable_string(value: Any) -> str | None:
+    if value is None:
+        return None
+    normalized = str(value).strip().lower()
+    if normalized in {"", "none", "null"}:
+        return None
+    return normalized
+
+
+def _as_bool(value: Any, default: bool = True) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"true", "1", "yes"}:
+        return True
+    if normalized in {"false", "0", "no"}:
+        return False
+    return default
+
+
+def _intent_from_text(text: str) -> dict[str, Any]:
+    payload = _extract_json_object(text) or _extract_key_value_object(text)
+    if not payload:
+        return dict(_INTENT_FALLBACK)
+
+    scope = _normalize_nullable_string(payload.get("sentiment_scope"))
+    if scope not in {"global", "coin", None}:
+        scope = None
+
+    sentiment_days = payload.get("sentiment_days")
+    if sentiment_days in {"", "null", "none"}:
+        sentiment_days = None
+    elif sentiment_days is not None:
+        try:
+            sentiment_days = int(sentiment_days)
+        except (TypeError, ValueError):
+            sentiment_days = None
+
+    date_range = payload.get("date_range")
+    if not isinstance(date_range, dict) or not date_range.get("start") or not date_range.get("end"):
+        date_range = None
+
+    return {
+        "needs_sentiment": _as_bool(payload.get("needs_sentiment"), True),
+        "needs_rag": _as_bool(payload.get("needs_rag"), True),
+        "sentiment_scope": scope,
+        "sentiment_days": sentiment_days,
+        "date_range": date_range,
+    }
+
+
+def _entity_confidence(value: Any) -> float:
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        confidence = 0.9
+    return max(0.0, min(1.0, confidence))
+
+
+def _entities_from_text(text: str) -> dict[str, Any]:
+    payload = _extract_json_object(text)
+    if not isinstance(payload, dict):
+        return {"entities": []}
+
+    raw_entities = payload.get("entities", [])
+    if not isinstance(raw_entities, list):
+        return {"entities": []}
+
+    entities: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for item in raw_entities:
+        if not isinstance(item, dict):
+            continue
+        normalized = str(item.get("normalized") or item.get("text") or "").strip()
+        original = str(item.get("original_mention") or item.get("original") or normalized).strip()
+        entity_type = str(item.get("type") or "CRYPTO").strip().upper()
+        if not normalized:
+            continue
+        key = (normalized.lower(), entity_type)
+        if key in seen:
+            continue
+        entities.append(
+            {
+                "normalized": normalized,
+                "original_mention": original,
+                "type": entity_type,
+                "confidence": _entity_confidence(item.get("confidence", 0.9)),
+            }
+        )
+        seen.add(key)
+    return {"entities": entities}
+
+
+def _mock_intent(prompt: str) -> dict[str, Any]:
+    text = prompt.lower()
+    coin_terms = {
+        "bitcoin", "btc", "ethereum", "eth", "solana", "sol",
+        "dogecoin", "doge", "shib", "xrp", "bnb", "ada",
+    }
+    asks_sentiment = any(
+        term in text
+        for term in (
+            "sentiment", "mood", "bullish", "bearish", "feeling",
+            "rally", "rallying", "inflow", "inflows", "crash", "selloff",
+        )
+    )
+    has_coin = any(term in text for term in coin_terms)
+
+    if not asks_sentiment and any(term in text for term in ("technology", "technical", "whitepaper", "explain")):
+        return {
+            "needs_sentiment": False,
+            "needs_rag": True,
+            "sentiment_scope": None,
+            "sentiment_days": None,
+            "date_range": None,
+        }
+    if not asks_sentiment and text.strip() in {"hello", "hi", "hey"}:
+        return {
+            "needs_sentiment": False,
+            "needs_rag": False,
+            "sentiment_scope": None,
+            "sentiment_days": None,
+            "date_range": None,
+        }
+
+    days = 7
+    if any(term in text for term in ("last month", "past month", "30 days")):
+        days = 30
+    elif any(term in text for term in ("3 months", "quarter", "90 days")):
+        days = 90
+
+    return {
+        "needs_sentiment": asks_sentiment or "market" in text,
+        "needs_rag": any(term in text for term in ("news", "event", "why", "right now", "etf", "inflow", "inflows")),
+        "sentiment_scope": "coin" if has_coin else "global",
+        "sentiment_days": days,
+        "date_range": None,
+    }
+
+
+def _mock_entities(text: str) -> dict[str, Any]:
+    known = {
+        "bitcoin": ("BTC", "CRYPTO"), "btc": ("BTC", "CRYPTO"),
+        "ethereum": ("ETH", "CRYPTO"), "eth": ("ETH", "CRYPTO"),
+        "solana": ("SOL", "CRYPTO"), "sol": ("SOL", "CRYPTO"),
+        "binance coin": ("BNB", "CRYPTO"), "bnb": ("BNB", "CRYPTO"),
+        "ripple": ("XRP", "CRYPTO"), "xrp": ("XRP", "CRYPTO"),
+        "dogecoin": ("DOGE", "CRYPTO"), "doge": ("DOGE", "CRYPTO"),
+        "binance": ("Binance", "EXCHANGE"),
+        "coinbase": ("Coinbase", "EXCHANGE"),
+        "kraken": ("Kraken", "EXCHANGE"),
+        "sec": ("SEC", "REGULATORY_BODY"),
+        "cftc": ("CFTC", "REGULATORY_BODY"),
+        "ftx": ("FTX Collapse", "EVENT"),
+        "etf approval": ("ETF Approval", "EVENT"),
+    }
+    lower = text.lower()
+    seen: set[tuple[str, str]] = set()
+    entities: list[dict[str, Any]] = []
+    for mention, (normalized, entity_type) in known.items():
+        key = (normalized.lower(), entity_type)
+        if key in seen:
+            continue
+        if lower.find(mention) == -1:
+            continue
+        entities.append(
+            {
+                "normalized": normalized,
+                "original_mention": mention,
+                "type": entity_type,
+                "confidence": 0.99,
+            }
+        )
+        seen.add(key)
+    return {"entities": entities}
+
+
 def _lexical_sentiment(text: str) -> SentimentResult:
     terms = _tokens(text)
     bullish_hits = len(terms & BULLISH_TERMS)
@@ -233,6 +510,44 @@ def predict_sentiment(text: str) -> SentimentResult:
         return _sentiment_from_text(content)
 
     return _lexical_sentiment(text)
+
+
+def classify_intent(prompt: str) -> dict[str, Any]:
+    if not prompt or not prompt.strip():
+        raise ValueError("prompt cannot be empty")
+    if not _mock_enabled():
+        _real_mode_unavailable()
+        content = _chat_completion(
+            model=_chat_model(),
+            messages=[
+                {"role": "system", "content": _INTENT_SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0,
+            max_tokens=128,
+        )
+        return _intent_from_text(content)
+
+    return _mock_intent(prompt)
+
+
+def extract_entities(text: str) -> dict[str, Any]:
+    if not text or not text.strip():
+        return {"entities": []}
+    if not _mock_enabled():
+        _real_mode_unavailable()
+        content = _chat_completion(
+            model=_chat_model(),
+            messages=[
+                {"role": "system", "content": _NER_SYSTEM_PROMPT},
+                {"role": "user", "content": text},
+            ],
+            temperature=0,
+            max_tokens=256,
+        )
+        return _entities_from_text(content)
+
+    return _mock_entities(text)
 
 
 def batch_predict_sentiment(texts: list[str]) -> list[SentimentResult]:
