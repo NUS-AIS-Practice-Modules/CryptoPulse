@@ -16,9 +16,11 @@ The stable cross-module contracts live in `docs/INTERFACES.md`. Root and module 
 
 ## Data Downloads
 
-- `rag_datasets`: [Google Drive](https://drive.google.com/drive/folders/15I5fKFd6b53XaDOMTDNigZvIeCHEVaui?usp=sharing)
-- `lora_checkpoints`: [Google Drive](https://drive.google.com/drive/folders/1KiLteOSjxCoeKuL5lAJ7jhDoks5JNZGz?usp=drive_link)
-- `lora_datasets`: [Google Drive](https://drive.google.com/drive/folders/1yIBV6ZudORBSYWAQUVeQkxBY8Vat_179?usp=sharing)
+- `rag_datasets`: [Google Drive](https://drive.google.com/drive/folders/15I5fKFd6b53XaDOMTDNigZvIeCHEVaui?usp=sharing) -> place the raw files under `rag/data/raw/{whitepaper,case_study,regulatory,market_data,news}/`
+- `lora_checkpoints`: [Google Drive](https://drive.google.com/drive/folders/1KiLteOSjxCoeKuL5lAJ7jhDoks5JNZGz?usp=drive_link) -> place checkpoints under `lora/checkpoints/`
+- `lora_datasets`: [Google Drive](https://drive.google.com/drive/folders/1yIBV6ZudORBSYWAQUVeQkxBY8Vat_179?usp=sharing) -> place raw datasets under `lora/data/raw/`
+
+These downloaded artifacts are local-only inputs and must not be committed.
 
 ## Modules
 
@@ -38,10 +40,11 @@ The stable cross-module contracts live in `docs/INTERFACES.md`. Root and module 
 - Local Milvus standalone on `127.0.0.1:19530`
 - AutoDL SSH tunnel exposing vLLM at `http://127.0.0.1:6006/v1`
 - Local model caches:
-  - BGE-M3: `/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181`
-  - BGE reranker: `/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base`
+  - BGE-M3: `/path/to/bge-m3-snapshot`
+  - BGE reranker: `/path/to/bge-reranker-base`
 
 Do not install project packages into conda `base`. Use module-local virtual environments.
+Replace placeholder paths below with your own local absolute paths where needed.
 
 ## Bootstrap
 
@@ -66,16 +69,16 @@ python3 -m venv .venv
 For full no-mock Chatbot, the clean setup is to install RAG dependencies into `chatbot/.venv`:
 
 ```bash
-cd /Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse
+cd /path/to/CryptoPulse
 chatbot/.venv/bin/pip install -r rag/requirements.txt
 ```
 
 If local network policy blocks that install, use the already-created `rag/.venv` as a read-only dependency bridge when starting Chatbot:
 
 ```bash
-export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages
+export RAG_SITE_PACKAGES=/path/to/CryptoPulse/rag/.venv/lib/python3.11/site-packages
 export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH"
-export RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages
+export RAG_SYSTEM_SITE_PACKAGES=/path/to/python3.11/site-packages
 ```
 
 ## Milvus
@@ -120,34 +123,34 @@ The expected model ids are `llama3.1-8b-instruct`, `ift-lora`, and `sentiment-lo
 Terminal 1, Chatbot with real RAG and real AutoDL LoRA:
 
 ```bash
-cd /Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/chatbot
+cd /path/to/CryptoPulse/chatbot
 
-export RAG_SITE_PACKAGES=/Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/rag/.venv/lib/python3.11/site-packages
+export RAG_SITE_PACKAGES=/path/to/CryptoPulse/rag/.venv/lib/python3.11/site-packages
 export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH"
 export LORA_REMOTE_API_KEY=your-local-key
 
 USE_MOCK=false \
 RAG_USE_MOCK=false \
+NER_BACKEND=lora \
 LLM_BACKEND=lora \
 LORA_USE_MOCK=false \
-LORA_REMOTE_API_KEY=sk-crypto-2026 \
 LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 \
 USE_MILVUS_NATIVE_HYBRID=true \
 USE_CROSS_ENCODER_RERANKER=false \
 MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 \
-EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 \
-RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base \
+EMBEDDING_MODEL_NAME=/path/to/bge-m3-snapshot \
+RERANK_MODEL_NAME=/path/to/bge-reranker-base \
 BM25_INDEX_PATH=../rag/data/processed/bm25_index.json \
 HF_HUB_OFFLINE=1 \
 TRANSFORMERS_OFFLINE=1 \
-RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages \
+RAG_SYSTEM_SITE_PACKAGES=/path/to/python3.11/site-packages \
 .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000
 ```
 
 Terminal 2, Frontend against the real Chatbot API:
 
 ```bash
-cd /Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse/frontend
+cd /path/to/CryptoPulse/frontend
 VITE_USE_MOCK=false \
 VITE_API_BASE_URL=http://127.0.0.1:8000 \
 npm run dev -- --host 127.0.0.1 --port 5173
@@ -160,7 +163,7 @@ If `VITE_USE_MOCK` or `VITE_API_BASE_URL` changes, stop and restart
 Terminal 3, verification:
 
 ```bash
-cd /Users/kevinableyyyx/Desktop/AIS-Semester2/PLP/PLPpracticeModule/CryptoPulse
+cd /path/to/CryptoPulse
 python scripts/verify_full_no_mock_e2e.py
 ```
 

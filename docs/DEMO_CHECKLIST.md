@@ -58,6 +58,7 @@ screen.
 3. Verify AutoDL vLLM models using the environment variable, not the literal key:
 
    ```bash
+   export LORA_REMOTE_API_KEY=your-local-key
    curl http://127.0.0.1:6006/v1/models \
      -H "Authorization: Bearer $LORA_REMOTE_API_KEY"
    ```
@@ -71,15 +72,21 @@ screen.
 4. Start Chatbot full no-mock mode from `chatbot/`:
 
    ```bash
+   export RAG_SITE_PACKAGES=/path/to/CryptoPulse/rag/.venv/lib/python3.11/site-packages
+   export PYTHONPATH="$RAG_SITE_PACKAGES:$PYTHONPATH"
+   export RAG_SYSTEM_SITE_PACKAGES=/path/to/python3.11/site-packages
+
    USE_MOCK=false RAG_USE_MOCK=false LLM_BACKEND=lora LORA_USE_MOCK=false \
+   NER_BACKEND=lora \
    LORA_REMOTE_BASE_URL=http://127.0.0.1:6006/v1 \
+   LORA_REMOTE_API_KEY=$LORA_REMOTE_API_KEY \
    USE_MILVUS_NATIVE_HYBRID=true USE_CROSS_ENCODER_RERANKER=false \
    MILVUS_COLLECTION=cryptopulse_rag_hybrid_bge_m3_bm25 \
-   EMBEDDING_MODEL_NAME=/Users/kevinableyyyx/.cache/huggingface/hub/models--BAAI--bge-m3/snapshots/5617a9f61b028005a4858fdac845db406aefb181 \
-   RERANK_MODEL_NAME=/Users/kevinableyyyx/.cache/modelscope/hub/models/BAAI/bge-reranker-base \
+   EMBEDDING_MODEL_NAME=/path/to/bge-m3-snapshot \
+   RERANK_MODEL_NAME=/path/to/bge-reranker-base \
    BM25_INDEX_PATH=../rag/data/processed/bm25_index.json \
    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-   RAG_SYSTEM_SITE_PACKAGES=/Users/kevinableyyyx/anaconda3/lib/python3.11/site-packages \
+   RAG_SYSTEM_SITE_PACKAGES=/path/to/python3.11/site-packages \
    .venv/bin/uvicorn src.app:app --host 127.0.0.1 --port 8000
    ```
 
