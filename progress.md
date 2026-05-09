@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-05-08
-**Active Feature:** LoRA-IFT intent and NER routing
+**Last Updated:** 2026-05-09
+**Active Feature:** Repository documentation localization
 
 ## Status
 
@@ -38,6 +38,8 @@
 - [x] Fixed real/mock status consistency. Frontend Settings now reads current Vite runtime env, Dashboard shows `Frontend Mode`, and Chatbot health now probes AutoDL vLLM `/models` before reporting real LoRA as ok.
 - [x] Added LoRA-IFT intent routing. LoRA now exposes `classify_intent()` through the existing AutoDL vLLM wrapper using `ift-lora`, and Chatbot routes intent classification through LoRA when `LLM_BACKEND=lora` while preserving the OpenAI path.
 - [x] Added LoRA-IFT NER routing. LoRA now exposes `extract_entities()` through the existing AutoDL vLLM wrapper using `ift-lora`, and Chatbot routes NER through LoRA first when `NER_BACKEND=lora`, then falls back to OpenAI and local rules.
+- [x] Reorganized the 44 RAG raw corpus PDFs into `rag/data/raw/{whitepaper,case_study,regulatory,market_data,news}/` and updated the raw manifests plus `rag/SETUP.md` to match the categorized layout
+- [x] Converted all root and submodule `*.md` and tracked `*.json` user-facing text to English where needed, and added external data links for RAG datasets, LoRA checkpoints, and LoRA datasets to the root `README.md`
 
 ### What's In Progress
 

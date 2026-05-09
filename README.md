@@ -14,6 +14,12 @@ Browser
 
 The stable cross-module contracts live in `docs/INTERFACES.md`. Root and module progress are tracked in `feature_list.json` files, `progress.md`, and `session-handoff.md`.
 
+## Data Downloads
+
+- `rag_datasets`: [Google Drive](https://drive.google.com/drive/folders/15I5fKFd6b53XaDOMTDNigZvIeCHEVaui?usp=sharing)
+- `lora_checkpoints`: [Google Drive](https://drive.google.com/drive/folders/1KiLteOSjxCoeKuL5lAJ7jhDoks5JNZGz?usp=drive_link)
+- `lora_datasets`: [Google Drive](https://drive.google.com/drive/folders/1yIBV6ZudORBSYWAQUVeQkxBY8Vat_179?usp=sharing)
+
 ## Modules
 
 | Module | Role | Main command |

@@ -1,35 +1,35 @@
-# Frontend API 接口文档
+# Frontend API Reference
 
-本文档面向 `CryptoPulse` 前端联调，基于当前参考文档与已实现的前端代码整理。
+This document is intended for `CryptoPulse` frontend integration work and is based on the current reference materials plus the implemented frontend code.
 
-当前前端默认通过环境变量访问后端：
+The frontend currently accesses the backend through environment variables:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 VITE_USE_MOCK=true
 ```
 
-- `VITE_API_BASE_URL`：后端服务地址
-- `VITE_USE_MOCK`：是否使用本地 Mock 数据
-- 当 `VITE_USE_MOCK=false` 时，前端会请求真实后端接口
+- `VITE_API_BASE_URL`: backend service base URL
+- `VITE_USE_MOCK`: whether to use local mock data
+- When `VITE_USE_MOCK=false`, the frontend calls the real backend APIs
 
 ---
 
-## 1. 接口总览
+## 1. API Overview
 
-| Method | Path | 用途 |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/chat` | 用户发送问题，获取 AI 回复、情绪标签与来源 |
-| `GET` | `/api/sentiment/summary` | Dashboard 获取情绪趋势、分布和主题摘要 |
-| `GET` | `/api/health` | 检查系统健康状态 |
+| `POST` | `/api/chat` | User sends a question and receives an AI reply, sentiment label, and sources |
+| `GET` | `/api/sentiment/summary` | Dashboard fetches sentiment trends, distribution, and topic summaries |
+| `GET` | `/api/health` | Checks system health status |
 
-默认拼接方式：
+Default composition:
 
 ```text
 {VITE_API_BASE_URL}{path}
 ```
 
-示例：
+Example:
 
 ```text
 http://localhost:8000/api/chat
@@ -37,102 +37,102 @@ http://localhost:8000/api/chat
 
 ---
 
-## 2. 通用约定
+## 2. Common Conventions
 
 ### 2.1 Content-Type
 
-前端当前有两种请求方式：
+The frontend currently supports two request modes:
 
-- 当 `/api/chat` 不带文件上传时，使用 `application/json`
-- 当 `/api/chat` 带文件上传时，使用 `multipart/form-data`
-- `GET` 接口无需请求体
+- When `/api/chat` is sent without file upload, use `application/json`
+- When `/api/chat` includes file upload, use `multipart/form-data`
+- `GET` endpoints do not require a request body
 
-### 2.2 错误处理
+### 2.2 Error Handling
 
-前端当前的错误处理逻辑为：
+The current frontend error behavior is:
 
-- 如果 HTTP 状态码不是 `2xx`
-- 前端会读取响应体文本
-- 并将文本直接作为错误消息展示
+- If the HTTP status code is not `2xx`
+- the frontend reads the response body as text
+- and displays that text directly as the error message
 
-因此建议后端在失败时返回清晰的纯文本，或返回可读性较高的错误说明。
+Because of that, the backend should ideally return clear plain-text errors, or human-readable error descriptions in JSON.
 
-建议状态码：
+Recommended status codes:
 
-| 状态码 | 含义 |
+| Status code | Meaning |
 | --- | --- |
-| `200` | 请求成功 |
-| `400` | 参数错误 |
-| `413` | 上传文件过大 |
-| `415` | 文件类型不支持 |
-| `500` | 服务内部错误 |
-| `503` | 模型/服务暂不可用 |
+| `200` | Request succeeded |
+| `400` | Invalid parameters |
+| `413` | Uploaded file is too large |
+| `415` | Unsupported file type |
+| `500` | Internal server error |
+| `503` | Model/service temporarily unavailable |
 
 ---
 
 ## 3. `POST /api/chat`
 
-### 3.1 用途
+### 3.1 Purpose
 
-用于聊天问答主流程：
+Used for the main chat flow:
 
-- 发送用户问题
-- 支持多轮会话
-- 可选上传文档
-- 返回 AI 回复
-- 返回情绪标签与引用来源
+- send user questions
+- support multi-turn conversations
+- optionally upload a document
+- return the AI reply
+- return sentiment labels and cited sources
 
-### 3.2 请求格式
+### 3.2 Request Format
 
-#### 场景 A：纯文本对话
+#### Scenario A: Text-only conversation
 
 `Content-Type: application/json`
 
-请求体：
+Request body:
 
 ```json
 {
-  "message": "今天 BTC 市场情绪怎么样？",
+  "message": "How is BTC market sentiment today?",
   "conversation_id": "conv-001"
 }
 ```
 
-字段说明：
+Field descriptions:
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `message` | `string` | 是 | 用户输入的问题 |
-| `conversation_id` | `string` | 否 | 多轮对话 ID，首次对话可不传 |
+| `message` | `string` | Yes | User question |
+| `conversation_id` | `string` | No | Multi-turn conversation ID; can be omitted on the first turn |
 
-#### 场景 B：带文件上传
+#### Scenario B: With file upload
 
 `Content-Type: multipart/form-data`
 
-表单字段：
+Form fields:
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `message` | `string` | 是 | 用户输入的问题 |
-| `conversation_id` | `string` | 否 | 多轮对话 ID |
-| `file` | `File` | 否 | 上传文档 |
+| `message` | `string` | Yes | User question |
+| `conversation_id` | `string` | No | Multi-turn conversation ID |
+| `file` | `File` | No | Uploaded document |
 
-当前前端支持选择的文件类型：
+File types currently supported by the frontend selector:
 
 - `PDF`
 - `TXT`
 - `DOCX`
 
-说明：
+Notes:
 
-- 文件上传 UI 已实现
-- 真实文件解析能力依赖后端
-- 若后端暂不支持文件，可先忽略 `file` 字段并只处理文本消息
+- The upload UI is already implemented
+- Real file parsing still depends on backend support
+- If the backend does not support file upload yet, it can ignore `file` and process text only
 
-### 3.3 成功响应
+### 3.3 Success Response
 
 ```json
 {
-  "reply": "当前市场情绪偏谨慎乐观，ETF 相关叙事带动了 BTC 讨论热度。",
+  "reply": "Current market sentiment is cautiously optimistic, and ETF-related narratives are driving BTC discussion volume.",
   "conversation_id": "conv-001",
   "sentiment": "Bullish",
   "sources": [
@@ -144,16 +144,16 @@ http://localhost:8000/api/chat
 }
 ```
 
-字段说明：
+Field descriptions:
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `reply` | `string` | 是 | AI 回复内容 |
-| `conversation_id` | `string` | 是 | 对话 ID，前端用于串联多轮会话 |
-| `sentiment` | `"Bullish" \| "Bearish" \| "Neutral"` | 否 | 当前问题对应的情绪分析结果 |
-| `sources` | `SourceLink[]` | 否 | 引用来源列表 |
+| `reply` | `string` | Yes | AI reply text |
+| `conversation_id` | `string` | Yes | Conversation ID used by the frontend to link turns |
+| `sentiment` | `"Bullish" \| "Bearish" \| "Neutral"` | No | Sentiment result for the current question |
+| `sources` | `SourceLink[]` | No | List of cited sources |
 
-`SourceLink` 结构：
+`SourceLink` shape:
 
 ```json
 {
@@ -162,15 +162,15 @@ http://localhost:8000/api/chat
 }
 ```
 
-### 3.4 失败响应建议
+### 3.4 Suggested Failure Responses
 
-纯文本示例：
+Plain-text example:
 
 ```text
 Invalid request: message is required.
 ```
 
-或 JSON 示例：
+Or JSON example:
 
 ```json
 {
@@ -178,41 +178,41 @@ Invalid request: message is required.
 }
 ```
 
-说明：
+Notes:
 
-- 当前前端在失败时优先按文本读取响应体
-- 若后端返回 JSON，建议同时确保可转成易读文本
+- The frontend currently prefers reading failure bodies as text
+- If the backend returns JSON, it should still be easy to convert into readable text
 
 ---
 
 ## 4. `GET /api/sentiment/summary`
 
-### 4.1 用途
+### 4.1 Purpose
 
-用于 Dashboard 页面展示：
+Used by the Dashboard page to display:
 
-- 情绪趋势折线图
-- Bullish / Bearish / Neutral 分布图
+- sentiment trend line charts
+- Bullish / Bearish / Neutral distribution
 - Top Topics
-- 汇总统计卡片
+- summary statistic cards
 
-### 4.2 请求参数
+### 4.2 Request Parameters
 
-当前前端尚未传递查询参数。
+The current frontend does not yet send query parameters here.
 
-如果后续需要支持时间范围筛选，建议可扩展为：
+If time-range filtering is added later, a reasonable extension would be:
 
-| 参数 | 类型 | 必填 | 说明 |
+| Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `range` | `string` | 否 | 如 `7d` / `30d` / `90d` |
+| `range` | `string` | No | For example `7d` / `30d` / `90d` |
 
-示例：
+Example:
 
 ```text
 /api/sentiment/summary?range=7d
 ```
 
-### 4.3 成功响应
+### 4.3 Success Response
 
 ```json
 {
@@ -246,19 +246,19 @@ Invalid request: message is required.
 }
 ```
 
-字段说明：
+Field descriptions:
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `totalAnalyses` | `number` | 是 | 已分析数据总量 |
-| `activeTopics` | `number` | 是 | 当前活跃主题数 |
-| `health` | `"Healthy" \| "Warning" \| "Offline"` | 是 | 系统整体健康标记 |
-| `lastUpdated` | `string` | 是 | 最近更新时间 |
-| `trend` | `TrendPoint[]` | 是 | 趋势图数据 |
-| `distribution` | `SentimentDistribution[]` | 是 | 情绪占比数据 |
-| `topTopics` | `string[]` | 是 | 热门主题列表 |
+| `totalAnalyses` | `number` | Yes | Total number of analyzed items |
+| `activeTopics` | `number` | Yes | Number of currently active topics |
+| `health` | `"Healthy" \| "Warning" \| "Offline"` | Yes | Overall health marker |
+| `lastUpdated` | `string` | Yes | Last update time |
+| `trend` | `TrendPoint[]` | Yes | Trend chart data |
+| `distribution` | `SentimentDistribution[]` | Yes | Sentiment distribution data |
+| `topTopics` | `string[]` | Yes | Top topics |
 
-`TrendPoint` 结构：
+`TrendPoint` shape:
 
 ```json
 {
@@ -269,7 +269,7 @@ Invalid request: message is required.
 }
 ```
 
-`SentimentDistribution` 结构：
+`SentimentDistribution` shape:
 
 ```json
 {
@@ -282,11 +282,11 @@ Invalid request: message is required.
 
 ## 5. `GET /api/health`
 
-### 5.1 用途
+### 5.1 Purpose
 
-用于检测系统可用性，并在 Dashboard 中展示 API 健康状态。
+Used to detect system availability and show API health status in the Dashboard.
 
-### 5.2 成功响应
+### 5.2 Success Response
 
 ```json
 {
@@ -295,18 +295,18 @@ Invalid request: message is required.
 }
 ```
 
-字段说明：
+Field descriptions:
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `status` | `"ok" \| "degraded" \| "down"` | 是 | 系统状态 |
-| `message` | `string` | 是 | 状态说明 |
+| `status` | `"ok" \| "degraded" \| "down"` | Yes | System status |
+| `message` | `string` | Yes | Status description |
 
 ---
 
-## 6. TypeScript 类型对照
+## 6. TypeScript Type Mapping
 
-前端当前使用的核心类型如下。
+The frontend currently uses the following core types.
 
 ### 6.1 `ChatReply`
 
@@ -344,23 +344,23 @@ interface HealthStatus {
 
 ---
 
-## 7. Mock 模式说明
+## 7. Mock Mode
 
-当前前端支持本地 Mock 模式，适合后端尚未准备好时进行 UI 联调。
+The frontend supports a local mock mode, which is useful when the backend is not ready.
 
-开启方式：
+Enable it with:
 
 ```env
 VITE_USE_MOCK=true
 ```
 
-Mock 覆盖接口：
+Mock-covered endpoints:
 
 - `POST /api/chat`
 - `GET /api/sentiment/summary`
 - `GET /api/health`
 
-关闭方式：
+Disable it with:
 
 ```env
 VITE_USE_MOCK=false
@@ -368,12 +368,11 @@ VITE_USE_MOCK=false
 
 ---
 
-## 8. 后续扩展建议
+## 8. Suggested Future Extensions
 
-建议后端后续预留以下能力：
+Recommended backend capabilities to reserve:
 
-1. `POST /api/chat` 支持流式输出，如 `SSE` 或 `WebSocket`
-2. `GET /api/sentiment/summary` 支持 `range` 查询参数
-3. 增加历史会话接口，如 `GET /api/conversations`
-4. 增加文档上传/解析专用接口，如 `POST /api/files/upload`
-
+1. `POST /api/chat` streaming output, such as `SSE` or `WebSocket`
+2. `GET /api/sentiment/summary` with a `range` query parameter
+3. Historical conversation APIs such as `GET /api/conversations`
+4. Dedicated document upload/parsing endpoints such as `POST /api/files/upload`

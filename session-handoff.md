@@ -29,6 +29,7 @@
 - Full no-mock Chatbot matrix passes with `LLM_BACKEND=lora NER_BACKEND=lora`: 14/14 requested routing cases passed, including SEC/CFTC/ETF, exchange, FTX, and coin sentiment entity extraction
 - Frontend browser walkthrough passes against the full no-mock backend for Dashboard and Chat
 - Frontend Settings displays current Vite runtime env, and Dashboard shows `Frontend Mode` so mock and real-api states are distinguishable
+- Root and module Markdown/JSON documentation is now English-only where user-facing text existed, and the root `README.md` includes external Google Drive links for RAG datasets, LoRA checkpoints, and LoRA datasets
 
 ## Changed This Session
 
@@ -43,6 +44,7 @@
 - Imported 19 provided local PDFs plus 18 rendered web PDFs into ignored `rag/data/processed/normalized_documents.jsonl`
 - Rebuilt normalized corpus after seven problematic CoinShares PDFs were manually replaced in `rag/data/raw/web_pdfs/`
 - Reclassified new root PDFs in `rag/data/raw/`, added OCR fallback for scanned PDFs, and rebuilt ignored `data/processed/normalized_documents.jsonl` to 44 documents
+- Localized the remaining Chinese root/module Markdown and JSON planning documents into English and added external dataset/checkpoint links to the root `README.md`
 - Added `rag/src/indexing/` with chunking, BM25 index persistence, embedding providers, Milvus store adapter, and `build_index` CLI
 - Indexed the 44 normalized documents into 1961 chunks with mock embeddings; generated ignored `data/processed/chunks.jsonl` and `data/processed/bm25_index.json`
 - Updated `rag/SETUP.md` to use the Milvus v2.6.14 Docker Compose flow and module-local `.venv`
